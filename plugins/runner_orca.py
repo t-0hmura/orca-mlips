@@ -8,6 +8,13 @@ import os
 import sys
 
 import numpy as np
+try:
+    from importlib import metadata as _importlib_metadata
+except Exception:
+    try:
+        import importlib_metadata as _importlib_metadata
+    except Exception:
+        _importlib_metadata = None
 
 if __package__ in (None, ""):
     _HERE = os.path.dirname(os.path.abspath(__file__))
@@ -22,6 +29,33 @@ else:
 
 class RunnerError(RuntimeError):
     pass
+
+
+def _backend_alias(plugin_name):
+    low = os.path.basename(str(plugin_name or "")).lower()
+    if "orb" in low:
+        return "orb"
+    if "mace" in low:
+        return "mace"
+    return "uma"
+
+
+def _looks_like_gaussian_invocation(argv):
+    if len(argv) < 6:
+        return False
+    tail = argv[-6:]
+    layer = str(tail[0]).strip().upper()
+    return layer in ("R", "M", "S")
+
+
+def _version_text(plugin_name):
+    version = "dev"
+    if _importlib_metadata is not None:
+        try:
+            version = _importlib_metadata.version("mlips4orca")
+        except Exception:
+            pass
+    return "{} (mlips4orca {})".format(plugin_name, version)
 
 
 def _write_hessian_dump(path, hessian):
@@ -64,9 +98,24 @@ def run_orca_plugin(
         help="Optional path to dump Hessian matrix (eV/Angstrom^2). Not used by ORCA itself.",
     )
     parser.add_argument("--list-models", action="store_true", help="Print available model aliases and exit")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=_version_text(plugin_name),
+    )
 
     if add_extra_args is not None:
         add_extra_args(parser)
+
+    if _looks_like_gaussian_invocation(argv):
+        backend = _backend_alias(plugin_name)
+        parser.error(
+            "Detected Gaussian-style invocation (LAYER + 5 generated files). "
+            "This command appears to be an ORCA plugin, but it was called in Gaussian style. "
+            "If short aliases are conflicting, set Gaussian External to '{}'.".format(
+                "mlips4g16-" + backend
+            )
+        )
 
     args = parser.parse_args(argv)
 

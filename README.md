@@ -1,59 +1,46 @@
 # mlips4orca
 
-Path-independent MLIP plugins for ORCA `ProgExt` / ExtTool.
-
-Included plugins:
-- `plugins/uma_orca.py` (FAIR-Chem / UMA)
-- `plugins/orbmol_orca.py` (orb-models / OrbMol)
-- `plugins/mace_orca.py` (MACE)
+MLIP plugins for ORCA ExtTool with three model families:
+- UMA (FAIR-Chem)
+- OrbMol (orb-models)
+- MACE
 
 Default models:
 - UMA: `uma-s-1p1`
 - OrbMol: `orb_v3_conservative_omol`
-- MACE: `MACE-OMOL-0` (alias of `omol:extra_large`)
+- MACE: `MACE-OMOL-0`
 
-## Quick Start
+## Quick Start (Default = UMA)
 
-1. Clone and enter this repository.
+1. Install PyTorch (CUDA 12.9 build).
 ```bash
-git clone https://github.com/t-0hmura/mlips4orca.git
-cd mlips4orca
+pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 ```
 
-2. (Optional) Create a clean environment.
+2. Install package with UMA profile.
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
+pip install "mlips4orca[uma]"
+```
+This install creates the commands `uma`, `orb`, `mace` (and prefixed aliases).
+
+3. Log in once to Hugging Face for UMA model access.
+```bash
+huggingface-cli login
 ```
 
-3. Install base requirements.
+4. Confirm commands and model list.
 ```bash
-pip install -r requirements.txt
+uma --list-models
+uma --list-tasks
+```
+If `uma` alias conflicts in your environment, use `mlips4orca-uma`.
+
+5. Confirm plugin version.
+```bash
+uma --version
 ```
 
-4. Install only the backend you need.
-```bash
-# UMA
-pip install fairchem-core
-
-# OrbMol
-pip install orb-models
-
-# MACE
-pip install mace-torch
-```
-
-5. Verify model listing.
-```bash
-python3 plugins/uma_orca.py --list-models
-python3 plugins/orbmol_orca.py --list-models
-python3 plugins/mace_orca.py --list-models
-```
-
-## ORCA Input Example
-
-Replace `/path/to/mlips4orca` with your local clone path.
-
+6. Use in ORCA (`ProgExt`).
 ```text
 ! SP
 
@@ -62,8 +49,8 @@ Replace `/path/to/mlips4orca` with your local clone path.
 end
 
 %method
-  ProgExt "/path/to/mlips4orca/plugins/uma_orca.py"
-  Ext_Params "--model uma-s-1p1 --task omol --device auto"
+  ProgExt "uma"
+  Ext_Params ""
 end
 
 * xyz 0 1
@@ -73,62 +60,102 @@ H -0.758602  0.000000  0.504284
 *
 ```
 
-Switch backend by replacing `ProgExt` script:
-- `.../plugins/orbmol_orca.py`
-- `.../plugins/mace_orca.py`
-
-## Model Selection
-
-UMA:
-```bash
-python3 plugins/uma_orca.py --list-models
-python3 plugins/uma_orca.py --list-tasks
+Optional explicit options:
+```text
+%method
+  ProgExt "uma"
+  Ext_Params "--model uma-s-1p1 --task omol --hessian-mode Analytical"
+end
 ```
 
-OrbMol:
-```bash
-python3 plugins/orbmol_orca.py --list-models
+Other backends with defaults:
+```text
+%method
+  ProgExt "orb"
+end
 ```
-Both dashed and underscored names are accepted, for example:
-- `orb-v3-conservative-omol`
-- `orb_v3_conservative_omol`
-
-MACE:
-```bash
-python3 plugins/mace_orca.py --list-models
+```text
+%method
+  ProgExt "mace"
+end
 ```
-Accepted forms include:
-- `MACE-OMOL-0`
-- `mp:<alias>` or `<alias>` (for MP aliases)
-- `off:<alias>` / `off-small|off-medium|off-large`
-- `omol:extra_large`
-- `anicc`
-- local model path or model URL
 
-## Hessian Mode
+Additional example inputs:
+- `examples/cla_external.inp`
+- `examples/sn2_external.inp`
+- `examples/h2o_EXT.xyz`
 
-ORCA ExtTool normally expects `engrad` (energy + gradient).
-This plugin can still compute Hessians internally:
-- `--hessian-mode Analytical`
-- `--hessian-mode Numerical`
+## Install Model Families
 
-Use `--dump-hessian <path>` to write Hessian (`eV/Angstrom^2`) for inspection.
+PyPI install:
+```bash
+# Default profile (UMA)
+pip install "mlips4orca[uma]"
+
+# Add OrbMol
+pip install "mlips4orca[orb]"
+
+# Add MACE
+pip install "mlips4orca[mace]"
+
+# Add both OrbMol + MACE
+pip install "mlips4orca[orb,mace]"
+
+# Core package only (no backend dependencies)
+pip install mlips4orca
+```
+
+Local source install:
+```bash
+git clone https://github.com/t-0hmura/mlips4orca.git
+cd mlips4orca
+pip install ".[uma]"
+pip install ".[orb]"     # optional
+pip install ".[mace]"    # optional
+pip install .            # core only
+```
+
+Family-specific commands:
+```bash
+uma --list-models
+orb --list-models
+mace --list-models
+```
+
+Family notes:
+- UMA: models are served from Hugging Face Hub. Run `huggingface-cli login` once.
+- OrbMol: models are provided by `orb-models` and downloaded automatically on first use.
+- MACE: models are provided by `mace-torch` and downloaded automatically on first use.
+
+## Upstream Model Sources
+
+- UMA / FAIR-Chem: https://github.com/facebookresearch/fairchem
+- OrbMol / orb-models: https://github.com/orbital-materials/orb-models
+- MACE: https://github.com/ACEsuit/mace
+
+## Advanced Usage
+
+### Backend Commands
+- Short aliases: `uma`, `orb`, `mace`
+- Prefixed aliases: `mlips4orca-uma`, `mlips4orca-orb`, `mlips4orca-mace`
+
+Detailed and low-impact tuning options are documented in `OPTIONS.md`.
+
+## Troubleshooting
+
+- `ProgExt "uma"` runs the wrong plugin:
+  Use prefixed aliases to avoid collisions, for example `ProgExt "mlips4orca-uma"`.
+- `uma` command is not found after install:
+  Activate the same environment where you installed the package, then reinstall with `python -m pip install "mlips4orca[uma]"`.
+- UMA model download fails with 401/403:
+  Run `huggingface-cli login`. Some UMA model repos are gated and require manual access approval on Hugging Face.
+- Works interactively but fails in scheduler jobs:
+  Job shells may have reduced `PATH`. Use an absolute command path in ORCA from `which uma`.
 
 ## Notes
 
-- ORCA ExtTool interface reference:
+- ORCA ExtTool references:
   - https://github.com/faccts/orca-external-tools
   - https://www.faccts.de/docs/orca/6.1/manual/contents/essentialelements/externaloptimizer.html
-- Upstream model sources:
-  - https://github.com/facebookresearch/fairchem
-  - https://github.com/orbital-materials/orb-models
-  - https://github.com/ACEsuit/mace
-
-## Cluster Smoke Test
-
-Edit and submit:
-```bash
-qsub run.sh
-```
-
-`run.sh` is intentionally generic and only loads modules if your environment provides the module system.
+- UMA and MACE profiles currently conflict at dependency level (`e3nn`); use separate environments.
+- `run.sh` contains a PBS smoke test template (`qsub run.sh`).

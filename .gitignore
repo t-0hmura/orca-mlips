@@ -9,3 +9,6 @@ __pycache__/
 *.chk
 *.fchk
 *.rwf
+build/
+dist/
+*.egg-info/

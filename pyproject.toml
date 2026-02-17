@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mlips4orca"
+version = "0.1.0"
+description = "MLIP plugins for ORCA ExtTool (UMA, OrbMol, MACE)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "ase",
+]
+
+[project.optional-dependencies]
+uma = ["torch>=2.8.0", "fairchem-core>=2.13"]
+orb = ["torch>=2.8.0", "orb-models"]
+mace = ["torch>=2.8.0", "mace-torch"]
+
+[project.urls]
+Homepage = "https://github.com/t-0hmura/mlips4orca"
+Repository = "https://github.com/t-0hmura/mlips4orca"
+
+[project.scripts]
+mlips4orca-uma = "mlips4orca_plugins.uma_orca:main"
+mlips4orca-orb = "mlips4orca_plugins.orbmol_orca:main"
+mlips4orca-mace = "mlips4orca_plugins.mace_orca:main"
+uma = "mlips4orca_plugins.uma_orca:main"
+orb = "mlips4orca_plugins.orbmol_orca:main"
+mace = "mlips4orca_plugins.mace_orca:main"
+
+[tool.setuptools]
+packages = ["mlips4orca_plugins"]
+include-package-data = false
+
+[tool.setuptools.package-dir]
+mlips4orca_plugins = "plugins"

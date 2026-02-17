@@ -1,8 +1,5 @@
-numpy
-ase
-torch
+-e .[uma]
 
-# Backend-specific packages (install only what you use):
-# fairchem-core
-# orb-models
-# mace-torch
+# Optional extras:
+# -e .[orb]
+# -e .[mace]

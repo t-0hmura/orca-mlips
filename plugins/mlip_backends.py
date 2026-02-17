@@ -66,12 +66,21 @@ ORB_MODELS_FALLBACK = [
     "orb-d3-sm-v2",
     "orb-d3-xs-v2",
     "orb-mptraj-only-v2",
-    "orb-v1",
-    "orb-d3-v1",
-    "orb-d3-sm-v1",
-    "orb-d3-xs-v1",
-    "orb-v1-mptraj-only",
 ]
+
+ORB_DEPRECATED_MODEL_ALIASES = {
+    "orb-v1": "orb-v2",
+    "orb-d3-v1": "orb-d3-v2",
+    "orb-d3-sm-v1": "orb-d3-sm-v2",
+    "orb-d3-xs-v1": "orb-d3-xs-v2",
+    "orb-v1-mptraj-only": "orb-mptraj-only-v2",
+    "orb-mptraj-only-v1": "orb-mptraj-only-v2",
+}
+
+
+def _is_deprecated_orb_model(model_name):
+    norm_dash = str(model_name).replace("_", "-").lower()
+    return norm_dash in ORB_DEPRECATED_MODEL_ALIASES
 
 MACE_MP_ALIASES_FALLBACK = [
     "small",
@@ -95,6 +104,32 @@ MACE_MP_ALIASES_FALLBACK = [
 
 class BackendError(RuntimeError):
     """Raised for backend-specific runtime failures."""
+
+
+def _is_hf_access_issue(exc):
+    text = str(exc).lower()
+    tags = (
+        "gatedrepoerror",
+        "forbidden",
+        "401",
+        "403",
+        "cannot access gated repo",
+        "huggingface",
+        "hf_hub_download",
+    )
+    return any(tag in text for tag in tags)
+
+
+def _with_uma_access_hint(prefix, exc):
+    msg = "{}: {}".format(prefix, exc)
+    if not _is_hf_access_issue(exc):
+        return msg
+    return (
+        msg
+        + "\nUMA model download failed due to Hugging Face access/auth."
+        + "\nRun once: huggingface-cli login"
+        + "\nIf the selected model repo is gated, request access on its Hugging Face page."
+    )
 
 
 def ev_to_ha(value_ev):
@@ -216,7 +251,11 @@ def get_available_orb_models():
     out = []
     seen = set()
     for model in models:
+        if _is_deprecated_orb_model(model):
+            continue
         for cand in (model, model.replace("-", "_")):
+            if _is_deprecated_orb_model(cand):
+                continue
             if cand not in seen:
                 seen.add(cand)
                 out.append(cand)
@@ -330,7 +369,18 @@ class _BackendBase(object):
 class UMAEvaluator(_BackendBase):
     """UMA backend via fairchem."""
 
-    def __init__(self, model, task, device, workers):
+    def __init__(
+        self,
+        model,
+        task,
+        device,
+        workers,
+        workers_per_node=None,
+        max_neigh=None,
+        radius=None,
+        r_edges=False,
+        otf_graph=True,
+    ):
         try:
             import torch
             from fairchem.core import FAIRChemCalculator, pretrained_mlip
@@ -338,7 +388,7 @@ class UMAEvaluator(_BackendBase):
             from fairchem.core.datasets.atomic_data import AtomicData
         except Exception as exc:
             raise BackendError(
-                "UMA backend requires fairchem-core, torch, and ase."
+                "UMA backend requires fairchem-core and torch. Install with: pip install \"mlips4orca[uma]\""
             ) from exc
 
         self._torch = torch
@@ -348,13 +398,57 @@ class UMAEvaluator(_BackendBase):
         self.device = str(device)
         self.model = str(model)
         self.task = str(task)
-        self.workers = int(workers)
-
-        self._predictor = pretrained_mlip.get_predict_unit(
-            self.model,
-            device=self.device,
-            workers=max(1, self.workers),
+        self.workers = max(1, int(workers))
+        self.workers_per_node = (
+            None if workers_per_node is None else max(1, int(workers_per_node))
         )
+        self.max_neigh = None if max_neigh is None else int(max_neigh)
+        if self.max_neigh is not None and self.max_neigh <= 0:
+            self.max_neigh = None
+        self.radius = None if radius is None else float(radius)
+        if self.radius is not None and self.radius <= 0:
+            self.radius = None
+        self.r_edges = bool(r_edges)
+        self.otf_graph = bool(otf_graph)
+
+        predictor_attempts = []
+        predictor_attempts.append(
+            {
+                "device": self.device,
+                "workers": self.workers,
+                "workers_per_node": self.workers_per_node,
+            }
+        )
+        predictor_attempts.append({"device": self.device, "workers": self.workers})
+        predictor_attempts.append({"device": self.device})
+
+        uniq_attempts = []
+        seen = set()
+        for kwargs in predictor_attempts:
+            clean = {k: v for k, v in kwargs.items() if v is not None}
+            key = tuple(sorted(clean.items()))
+            if key in seen:
+                continue
+            seen.add(key)
+            uniq_attempts.append(clean)
+
+        last_exc = None
+        self._predictor = None
+        for kwargs in uniq_attempts:
+            try:
+                self._predictor = pretrained_mlip.get_predict_unit(self.model, **kwargs)
+                break
+            except Exception as exc:
+                last_exc = exc
+                continue
+        if self._predictor is None:
+            raise BackendError(
+                _with_uma_access_hint(
+                    "Failed to initialize UMA predictor with the requested worker settings",
+                    last_exc,
+                )
+            )
+
         self._ase_calc = FAIRChemCalculator(self._predictor, task_name=self.task)
         self._AtomicData = AtomicData
         self._collater = data_list_collater
@@ -388,15 +482,20 @@ class UMAEvaluator(_BackendBase):
         max_neigh = getattr(backbone, "max_neighbors", None) if backbone is not None else None
         radius = getattr(backbone, "cutoff", 6.0) if backbone is not None else 6.0
 
+        if self.max_neigh is not None:
+            max_neigh = self.max_neigh
+        if self.radius is not None:
+            radius = self.radius
+
         data = self._AtomicData.from_ase(
             atoms,
             max_neigh=max_neigh,
             radius=radius,
-            r_edges=False,
+            r_edges=self.r_edges,
         )
         data.dataset = self.task
 
-        batch = self._collater([data], otf_graph=True)
+        batch = self._collater([data], otf_graph=self.otf_graph)
         if hasattr(batch, "to"):
             batch = batch.to(self.device)
         return batch
@@ -454,12 +553,14 @@ class UMAEvaluator(_BackendBase):
 class OrbMolEvaluator(_BackendBase):
     """OrbMol backend via orb-models."""
 
-    def __init__(self, model, device, precision, compile_model):
+    def __init__(self, model, device, precision, compile_model, loader_kwargs=None, calc_kwargs=None):
         try:
             import torch
             from orb_models.forcefield import pretrained as orb_pretrained
         except Exception as exc:
-            raise BackendError("OrbMol backend requires orb-models and torch.") from exc
+            raise BackendError(
+                "OrbMol backend requires orb-models and torch. Install with: pip install \"mlips4orca[orb]\""
+            ) from exc
 
         self._torch = torch
         self._pretrained = orb_pretrained
@@ -471,6 +572,8 @@ class OrbMolEvaluator(_BackendBase):
         self.model_name = str(model)
         self.precision = str(precision)
         self.compile_model = bool(compile_model)
+        self.loader_kwargs = dict(loader_kwargs or {})
+        self.calc_kwargs = dict(calc_kwargs or {})
 
         self._loader = self._resolve_loader(self.model_name)
         self._model_obj, self._adapter = self._load_model()
@@ -480,6 +583,10 @@ class OrbMolEvaluator(_BackendBase):
         self._conservative = "conservative" in lname and "direct" not in lname
 
     def _resolve_loader(self, model_name):
+        norm_dash = str(model_name).replace("_", "-").lower()
+        if norm_dash in ORB_DEPRECATED_MODEL_ALIASES:
+            model_name = ORB_DEPRECATED_MODEL_ALIASES[norm_dash]
+
         # 1) Prefer ORB_PRETRAINED_MODELS keys
         if hasattr(self._pretrained, "ORB_PRETRAINED_MODELS"):
             model_map = getattr(self._pretrained, "ORB_PRETRAINED_MODELS")
@@ -511,14 +618,31 @@ class OrbMolEvaluator(_BackendBase):
 
     def _load_model(self):
         # Handle API differences between orb-models releases.
-        attempts = [
+        attempts = []
+        for base in (
             {"device": self.device, "precision": self.precision, "compile": self.compile_model},
             {"device": self.device, "precision": self.precision},
             {"device": self.device},
             {},
-        ]
-        last_exc = None
+        ):
+            merged = dict(base)
+            merged.update(self.loader_kwargs)
+            attempts.append(merged)
+
+        if self.loader_kwargs:
+            attempts.append(dict(self.loader_kwargs))
+
+        uniq_attempts = []
+        seen = set()
         for kwargs in attempts:
+            key = tuple(sorted(kwargs.items()))
+            if key in seen:
+                continue
+            seen.add(key)
+            uniq_attempts.append(kwargs)
+
+        last_exc = None
+        for kwargs in uniq_attempts:
             try:
                 out = self._loader(**kwargs)
                 if isinstance(out, tuple) and len(out) >= 2:
@@ -531,20 +655,26 @@ class OrbMolEvaluator(_BackendBase):
         raise BackendError("Failed to load Orb model '{}': {}".format(self.model_name, last_exc))
 
     def _build_ase_calculator(self):
+        calc_kwargs = dict(self.calc_kwargs)
+
         # New API: orb_models.forcefield.inference.calculator.ORBCalculator
         try:
             from orb_models.forcefield.inference.calculator import ORBCalculator
 
             if self._adapter is not None:
                 try:
-                    return ORBCalculator(self._model_obj, self._adapter, device=self.device)
+                    return ORBCalculator(self._model_obj, self._adapter, device=self.device, **calc_kwargs)
+                except TypeError:
+                    pass
+                try:
+                    return ORBCalculator(self._model_obj, self._adapter, **calc_kwargs)
                 except TypeError:
                     pass
 
             try:
-                return ORBCalculator(self._model_obj, device=self.device)
+                return ORBCalculator(self._model_obj, device=self.device, **calc_kwargs)
             except TypeError:
-                return ORBCalculator(self._model_obj)
+                return ORBCalculator(self._model_obj, **calc_kwargs)
         except Exception:
             pass
 
@@ -554,13 +684,17 @@ class OrbMolEvaluator(_BackendBase):
 
             if self._adapter is not None:
                 try:
-                    return ORBCalculator(self._model_obj, self._adapter, device=self.device)
+                    return ORBCalculator(self._model_obj, self._adapter, device=self.device, **calc_kwargs)
+                except TypeError:
+                    pass
+                try:
+                    return ORBCalculator(self._model_obj, self._adapter, **calc_kwargs)
                 except TypeError:
                     pass
             try:
-                return ORBCalculator(self._model_obj, device=self.device)
+                return ORBCalculator(self._model_obj, device=self.device, **calc_kwargs)
             except TypeError:
-                return ORBCalculator(self._model_obj)
+                return ORBCalculator(self._model_obj, **calc_kwargs)
         except Exception as exc:
             raise BackendError("Failed to build ORBCalculator: {}".format(exc))
 
@@ -708,11 +842,13 @@ class OrbMolEvaluator(_BackendBase):
 class MACEEvaluator(_BackendBase):
     """MACE backend via mace.calculators."""
 
-    def __init__(self, model, device, default_dtype):
+    def __init__(self, model, device, default_dtype, calc_kwargs=None):
         try:
             import torch
         except Exception as exc:
-            raise BackendError("MACE backend requires torch.") from exc
+            raise BackendError(
+                "MACE backend requires torch and mace-torch. Install with: pip install \"mlips4orca[mace]\""
+            ) from exc
 
         self._torch = torch
         if str(device).lower() == "auto":
@@ -721,6 +857,7 @@ class MACEEvaluator(_BackendBase):
 
         self.model_spec = str(model)
         self.default_dtype = str(default_dtype)
+        self.calc_kwargs = dict(calc_kwargs or {})
 
         self._calc = self._build_calc(self.model_spec)
 
@@ -753,6 +890,8 @@ class MACEEvaluator(_BackendBase):
         spec_l = spec.lower()
         mp_alias_lookup = {str(x).lower(): x for x in mp_aliases}
 
+        calc_kwargs = dict(self.calc_kwargs)
+
         def _mk_mace_calculator_from_path(path_or_url):
             from mace.calculators.mace import MACECalculator
 
@@ -763,20 +902,34 @@ class MACEEvaluator(_BackendBase):
                 model_paths=model_path,
                 device=self.device,
                 default_dtype=self.default_dtype,
+                **calc_kwargs
             )
+
+        def _safe_mace_anicc(kwargs):
+            try:
+                return mace_anicc(**kwargs)
+            except Exception as exc:
+                msg = str(exc)
+                if ("no nvidia driver" in msg.lower()) or ("cuda" in msg.lower() and "backend" in msg.lower()):
+                    raise BackendError(
+                        "MACE ANICC could not be loaded on this host. "
+                        "The upstream ANICC checkpoint appears to require CUDA-backed operators "
+                        "in this environment. Try a CUDA-enabled node/driver, or use another MACE model."
+                    ) from exc
+                raise
 
         # Prefix forms
         if spec_l.startswith("mp:"):
             alias = spec.split(":", 1)[1].strip() or None
             if alias is not None:
                 alias = mp_alias_lookup.get(str(alias).lower(), alias)
-            return mace_mp(model=alias, device=self.device, default_dtype=self.default_dtype)
+            return mace_mp(model=alias, device=self.device, default_dtype=self.default_dtype, **calc_kwargs)
 
         if spec_l.startswith("off:"):
             alias = spec.split(":", 1)[1].strip() or None
             if alias is not None:
                 alias = str(alias).lower()
-            return mace_off(model=alias, device=self.device, default_dtype=self.default_dtype)
+            return mace_off(model=alias, device=self.device, default_dtype=self.default_dtype, **calc_kwargs)
 
         if spec_l.startswith("omol:"):
             alias = spec.split(":", 1)[1].strip() or None
@@ -788,7 +941,7 @@ class MACEEvaluator(_BackendBase):
                     alias = "extra_large"
                 else:
                     alias = alias_l
-            return mace_omol(model=alias, device=self.device, default_dtype=self.default_dtype)
+            return mace_omol(model=alias, device=self.device, default_dtype=self.default_dtype, **calc_kwargs)
 
         if spec_l.startswith("anicc"):
             path = None
@@ -797,7 +950,8 @@ class MACEEvaluator(_BackendBase):
             kwargs = {"device": self.device}
             if path:
                 kwargs["model_path"] = path
-            return mace_anicc(**kwargs)
+            kwargs.update(calc_kwargs)
+            return _safe_mace_anicc(kwargs)
 
         # Alias forms
         if spec_l in mp_alias_lookup:
@@ -805,11 +959,12 @@ class MACEEvaluator(_BackendBase):
                 model=mp_alias_lookup[spec_l],
                 device=self.device,
                 default_dtype=self.default_dtype,
+                **calc_kwargs
             )
 
         if spec_l in ("off-small", "off-medium", "off-large"):
             alias = spec_l.split("-", 1)[1]
-            return mace_off(model=alias, device=self.device, default_dtype=self.default_dtype)
+            return mace_off(model=alias, device=self.device, default_dtype=self.default_dtype, **calc_kwargs)
 
         if spec_l in (
             "omol-extra_large",
@@ -818,10 +973,12 @@ class MACEEvaluator(_BackendBase):
             "mace_omol_0",
             "maceomol0",
         ):
-            return mace_omol(model="extra_large", device=self.device, default_dtype=self.default_dtype)
+            return mace_omol(model="extra_large", device=self.device, default_dtype=self.default_dtype, **calc_kwargs)
 
         if spec_l in ("anicc", "ani", "ani500k"):
-            return mace_anicc(device=self.device)
+            kwargs = {"device": self.device}
+            kwargs.update(calc_kwargs)
+            return _safe_mace_anicc(kwargs)
 
         # Local file / URL
         if os.path.exists(spec) or spec.startswith("http://") or spec.startswith("https://"):
