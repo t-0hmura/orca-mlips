@@ -1,6 +1,8 @@
 # mlips4orca
 
 This plugin enables Machine Learning Interatomic Potentials (MLIPs) in ORCA through ExtTool (`ProgExt`).
+Because analytical Hessians are available, this plugin can provide more accurate TS searches, IRC, and vibrational analysis than numerical Hessians.
+If your environment has limited GPU VRAM, Numerical Hessian mode (`--hessian-mode Numerical`) is recommended.
 
 MLIP plugins for ORCA ExtTool with three model families:
 - UMA (FAIR-Chem)

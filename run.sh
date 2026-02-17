@@ -177,10 +177,3 @@ run_list_models "mlips4orca-uma" "uma" "plugins/uma_orca.py"
 run_list_models "mlips4orca-orb" "orb" "plugins/orbmol_orca.py"
 run_list_models "mlips4orca-mace" "mace" "plugins/mace_orca.py"
 echo "[INFO] smoke test completed"
-
-# Uncomment for full ORCA external execution after dependencies are installed.
-# Example ORCA snippet:
-# %method
-#   ProgExt "uma"
-#   Ext_Params ""
-# end

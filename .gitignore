@@ -13,3 +13,16 @@ tmp_real_mlip_*/
 build/
 dist/
 *.egg-info/
+examples/.mlips_cmds/
+examples/.gauss_scratch_*/
+examples/*.gbw
+examples/*.opt
+examples/*.property.txt
+examples/*.xyz
+examples/*_trj.xyz
+examples/*.engrad
+examples/*.bibtex
+examples/*.densities
+examples/*.densitiesinfo
+examples/fort.7
+run.sh

@@ -1,5 +1,1 @@
 -e .[uma]
-
-# Optional extras:
-# -e .[orb]
-# -e .[mace]

@@ -783,17 +783,7 @@ class OrbMolEvaluator(_BackendBase):
                 "Analytical Hessian is typically meaningful only for conservative Orb models."
             )
 
-        # If ASE calculator exposes Hessian directly, prefer that.
-        if hasattr(self._ase_calc, "get_hessian"):
-            from ase import Atoms
-
-            atoms = Atoms(symbols=symbols, positions=np.asarray(coords_ang, dtype=np.float64))
-            atoms.info["charge"] = float(charge)
-            atoms.info["spin"] = float(multiplicity)
-            hess = self._ase_calc.get_hessian(atoms=atoms)
-            return _as_square_hessian(hess, len(symbols))
-
-        # New API path: model + adapter
+        # New API path: model + adapter (autograd Hessian)
         if self._adapter is not None and hasattr(self._model_obj, "predict"):
             from ase import Atoms
 
