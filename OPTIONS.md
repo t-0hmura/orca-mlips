@@ -2,6 +2,10 @@
 
 This file lists detailed plugin options. For most users, defaults are enough.
 
+Compatibility note:
+- UMA and MACE extras currently conflict at dependency level (`e3nn`).
+- Use separate environments when switching between UMA and MACE.
+
 ## Common Options (all backends)
 
 - `--model <name_or_alias_or_path>`
@@ -16,6 +20,8 @@ This file lists detailed plugin options. For most users, defaults are enough.
 ## UMA Options (`uma` / `mlips4orca-uma`)
 
 - `--task <omol|omat|odac|oc20|oc25|omc>`
+- `--list-tasks`  
+  Print available UMA task names and exit.
 - `--workers <int>`  
   Predictor worker count.
 - `--workers-per-node <int>`  

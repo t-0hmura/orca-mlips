@@ -9,6 +9,7 @@ __pycache__/
 *.chk
 *.fchk
 *.rwf
+tmp_real_mlip_*/
 build/
 dist/
 *.egg-info/

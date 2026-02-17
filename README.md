@@ -1,5 +1,7 @@
 # mlips4orca
 
+This plugin enables Machine Learning Interatomic Potentials (MLIPs) in ORCA through ExtTool (`ProgExt`).
+
 MLIP plugins for ORCA ExtTool with three model families:
 - UMA (FAIR-Chem)
 - OrbMol (orb-models)
@@ -83,7 +85,7 @@ end
 Additional example inputs:
 - `examples/cla_external.inp`
 - `examples/sn2_external.inp`
-- `examples/h2o_EXT.xyz`
+- `examples/h2o_external.inp`
 
 ## Install Model Families
 
@@ -104,6 +106,10 @@ pip install "mlips4orca[orb,mace]"
 # Core package only (no backend dependencies)
 pip install mlips4orca
 ```
+
+Important compatibility note:
+- UMA and MACE are currently not compatible in a single environment due to `e3nn` dependency constraints.
+- Use separate environments (for example: one env for `mlips4orca[uma]`, another env for `mlips4orca[mace]` or `mlips4orca[orb,mace]`).
 
 Local source install:
 ```bash
