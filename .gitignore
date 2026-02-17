@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.swp
+.DS_Store
+*.log
+*.out
+*.err
+*.chk
+*.fchk
+*.rwf
