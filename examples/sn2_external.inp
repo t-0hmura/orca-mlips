@@ -1,11 +1,11 @@
-! Opt
+! OptTS
 
 %pal
   nprocs 8
 end
 
 %method
-  ProgExt "uma"
+  ProgExt "orb"
   Ext_Params ""
 end
 

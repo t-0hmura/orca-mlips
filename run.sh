@@ -44,25 +44,36 @@ run_list_models() {
   pref_cmd="$1"
   short_cmd="$2"
   py_script="$3"
+  backend_run "$pref_cmd" "$short_cmd" "$py_script" --version || true
+  backend_run "$pref_cmd" "$short_cmd" "$py_script" --list-models | head -n 20
+}
+
+resolve_backend_runner() {
+  pref_cmd="$1"
+  short_cmd="$2"
+  py_script="$3"
+
+  BACKEND_RUNNER_TYPE=""
+  BACKEND_RUNNER=""
 
   if command -v "$pref_cmd" >/dev/null 2>&1; then
+    BACKEND_RUNNER_TYPE="cmd"
+    BACKEND_RUNNER="$pref_cmd"
     echo "[INFO] using ${pref_cmd}"
-    "$pref_cmd" --version || true
-    "$pref_cmd" --list-models | head -n 20
     return 0
   fi
 
   if [ -f "$py_script" ]; then
+    BACKEND_RUNNER_TYPE="py"
+    BACKEND_RUNNER="$py_script"
     echo "[INFO] prefixed command not found; using python script ${py_script}"
-    python3 "$py_script" --version || true
-    python3 "$py_script" --list-models | head -n 20
     return 0
   fi
 
   if command -v "$short_cmd" >/dev/null 2>&1; then
+    BACKEND_RUNNER_TYPE="cmd"
+    BACKEND_RUNNER="$short_cmd"
     echo "[WARN] prefixed command missing; using short alias ${short_cmd} (may collide across packages)"
-    "$short_cmd" --version || true
-    "$short_cmd" --list-models | head -n 20
     return 0
   fi
 
@@ -70,32 +81,18 @@ run_list_models() {
   return 1
 }
 
-run_plugin_eval() {
+backend_run() {
   pref_cmd="$1"
   short_cmd="$2"
   py_script="$3"
   shift 3
 
-  if command -v "$pref_cmd" >/dev/null 2>&1; then
-    echo "[INFO] running ${pref_cmd} $*"
-    "$pref_cmd" "$@"
-    return $?
+  resolve_backend_runner "$pref_cmd" "$short_cmd" "$py_script" || return 1
+  if [ "$BACKEND_RUNNER_TYPE" = "py" ]; then
+    python3 "$BACKEND_RUNNER" "$@"
+  else
+    "$BACKEND_RUNNER" "$@"
   fi
-
-  if [ -f "$py_script" ]; then
-    echo "[INFO] prefixed command not found; running python script ${py_script} $*"
-    python3 "$py_script" "$@"
-    return $?
-  fi
-
-  if command -v "$short_cmd" >/dev/null 2>&1; then
-    echo "[WARN] prefixed command missing; using short alias ${short_cmd} (may collide across packages)"
-    "$short_cmd" "$@"
-    return $?
-  fi
-
-  echo "[ERROR] no usable command found for ${pref_cmd}/${short_cmd}"
-  return 1
 }
 
 run_real_mlip_test() {
@@ -139,19 +136,19 @@ PY
     uma)
       model="${MLIPS_MODEL:-uma-s-1p1}"
       task="${MLIPS_TASK:-omol}"
-      run_plugin_eval "mlips4orca-uma" "uma" "plugins/uma_orca.py" \
+      backend_run "mlips4orca-uma" "uma" "plugins/uma_orca.py" \
         "${test_dir}/water_EXT.extinp.tmp" \
         --model "$model" --task "$task" --device "$device"
       ;;
     orb)
       model="${MLIPS_MODEL:-orb_v3_conservative_omol}"
-      run_plugin_eval "mlips4orca-orb" "orb" "plugins/orbmol_orca.py" \
+      backend_run "mlips4orca-orb" "orb" "plugins/orbmol_orca.py" \
         "${test_dir}/water_EXT.extinp.tmp" \
         --model "$model" --device "$device"
       ;;
     mace)
       model="${MLIPS_MODEL:-MACE-OMOL-0}"
-      run_plugin_eval "mlips4orca-mace" "mace" "plugins/mace_orca.py" \
+      backend_run "mlips4orca-mace" "mace" "plugins/mace_orca.py" \
         "${test_dir}/water_EXT.extinp.tmp" \
         --model "$model" --device "$device"
       ;;

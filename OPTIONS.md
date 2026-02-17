@@ -12,10 +12,13 @@ Compatibility note:
 - `--device auto|cpu|cuda`
 - `--hessian-mode Analytical|Numerical`
 - `--hessian-step <float>`
-- `--strict-hessian`
 - `--list-models`
 - `--version`
 - `--dump-hessian <path>` (ORCA only; writes Hessian in `eV/Angstrom^2`)
+
+Notes:
+- In `Analytical` mode, backends now fail with an explicit error if analytical Hessian is unavailable.
+- No automatic fallback from `Analytical` to `Numerical` is performed.
 
 ## UMA Options (`uma` / `mlips4orca-uma`)
 
@@ -37,6 +40,7 @@ Compatibility note:
 
 ## OrbMol Options (`orb` / `mlips4orca-orb`)
 
+- Conservative Orb models only are supported.
 - `--precision <str>` (default: `float32-high`)
 - `--compile-model`
 - `--loader-opt KEY=VALUE` (repeatable)  

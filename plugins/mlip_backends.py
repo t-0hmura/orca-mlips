@@ -7,7 +7,7 @@ This module provides three backend classes:
 - MACEEvaluator
 
 All backends expose the same high-level method:
-    evaluate(..., need_hessian, hessian_mode, hessian_step, strict_hessian)
+    evaluate(..., need_hessian, hessian_mode, hessian_step)
 
 Units returned by evaluators:
 - energy: eV
@@ -48,24 +48,10 @@ FAIRCHEM_TASKS_FALLBACK = ["omol", "omat", "odac", "oc20", "oc25", "omc"]
 
 ORB_MODELS_FALLBACK = [
     "orb-v3-conservative-omol",
-    "orb-v3-direct-omol",
     "orb-v3-conservative-20-omat",
     "orb-v3-conservative-inf-omat",
-    "orb-v3-direct-20-omat",
-    "orb-v3-direct-inf-omat",
     "orb-v3-conservative-20-mpa",
     "orb-v3-conservative-inf-mpa",
-    "orb-v3-direct-20-mpa",
-    "orb-v3-direct-inf-mpa",
-    "separate-d3-3layer",
-    "separate-d3-5layer",
-    "separate-d4-3layer",
-    "separate-d4-5layer",
-    "orb-v2",
-    "orb-d3-v2",
-    "orb-d3-sm-v2",
-    "orb-d3-xs-v2",
-    "orb-mptraj-only-v2",
 ]
 
 ORB_DEPRECATED_MODEL_ALIASES = {
@@ -81,6 +67,12 @@ ORB_DEPRECATED_MODEL_ALIASES = {
 def _is_deprecated_orb_model(model_name):
     norm_dash = str(model_name).replace("_", "-").lower()
     return norm_dash in ORB_DEPRECATED_MODEL_ALIASES
+
+
+def _is_conservative_orb_model(model_name):
+    norm_dash = str(model_name).replace("_", "-").lower()
+    return ("conservative" in norm_dash) and ("direct" not in norm_dash)
+
 
 MACE_MP_ALIASES_FALLBACK = [
     "small",
@@ -155,6 +147,69 @@ def _as_square_hessian(hess_like, natoms):
     if h.ndim == 2 and h.shape == (dof, dof):
         return h
     return h.reshape(dof, dof)
+
+
+def _prepare_model_for_autograd_hessian(model_obj, torch_mod):
+    state = {
+        "was_training": bool(getattr(model_obj, "training", False)),
+        "param_flags": [],
+        "dropout_states": [],
+    }
+
+    if hasattr(model_obj, "parameters"):
+        for param in model_obj.parameters():
+            state["param_flags"].append((param, bool(param.requires_grad)))
+            param.requires_grad_(False)
+
+    if hasattr(model_obj, "train"):
+        model_obj.train(True)
+
+    dropout_types = []
+    nn_mod = getattr(torch_mod, "nn", None)
+    if nn_mod is not None:
+        for name in (
+            "Dropout",
+            "Dropout1d",
+            "Dropout2d",
+            "Dropout3d",
+            "AlphaDropout",
+            "FeatureAlphaDropout",
+        ):
+            cls = getattr(nn_mod, name, None)
+            if cls is not None:
+                dropout_types.append(cls)
+
+    if dropout_types and hasattr(model_obj, "modules"):
+        dtypes = tuple(dropout_types)
+        for module in model_obj.modules():
+            if not isinstance(module, dtypes):
+                continue
+            old_p = getattr(module, "p", None)
+            state["dropout_states"].append((module, bool(getattr(module, "training", False)), old_p))
+            if old_p is not None:
+                try:
+                    module.p = 0.0
+                except Exception:
+                    pass
+            module.train(False)
+
+    return state
+
+
+def _restore_model_after_autograd_hessian(model_obj, state):
+    for module, was_training, old_p in state.get("dropout_states", []):
+        if old_p is not None:
+            try:
+                module.p = old_p
+            except Exception:
+                pass
+        module.train(was_training)
+
+    if hasattr(model_obj, "train"):
+        model_obj.train(state.get("was_training", False))
+
+    for param, req_grad in state.get("param_flags", []):
+        param.requires_grad_(req_grad)
 
 
 def _numerical_hessian_from_forces(eval_energy_forces, coords_ang, step_ang):
@@ -253,8 +308,12 @@ def get_available_orb_models():
     for model in models:
         if _is_deprecated_orb_model(model):
             continue
+        if not _is_conservative_orb_model(model):
+            continue
         for cand in (model, model.replace("-", "_")):
             if _is_deprecated_orb_model(cand):
+                continue
+            if not _is_conservative_orb_model(cand):
                 continue
             if cand not in seen:
                 seen.add(cand)
@@ -321,7 +380,6 @@ class _BackendBase(object):
         need_hessian,
         hessian_mode,
         hessian_step,
-        strict_hessian,
     ):
         coords_ang = np.asarray(coords_ang, dtype=np.float64).reshape(-1, 3)
 
@@ -340,15 +398,12 @@ class _BackendBase(object):
                     h_ev_ang2 = _as_square_hessian(h_ev_ang2, len(symbols))
                     return float(e_ev), np.asarray(f_ev_ang, dtype=np.float64), h_ev_ang2
                 except Exception as exc:
-                    if strict_hessian:
-                        raise
-                    # Fallback to numerical Hessian
-                    e_ev, f_ev_ang, h_ev_ang2 = _numerical_hessian_from_forces(
-                        lambda x: self.energy_forces(symbols, x, charge, multiplicity),
-                        coords_ang,
-                        float(hessian_step),
+                    raise BackendError(
+                        "Analytical Hessian failed for {}: {}".format(
+                            self.__class__.__name__,
+                            exc,
+                        )
                     )
-                    return float(e_ev), np.asarray(f_ev_ang, dtype=np.float64), h_ev_ang2
 
             # Numerical mode
             e_ev, f_ev_ang, h_ev_ang2 = _numerical_hessian_from_forces(
@@ -513,14 +568,7 @@ class UMAEvaluator(_BackendBase):
             raise BackendError("UMA batch object has no 'pos' attribute.")
 
         batch.pos.requires_grad_(True)
-
-        pflags = []
-        for p in model.parameters():
-            pflags.append(bool(p.requires_grad))
-            p.requires_grad_(False)
-
-        was_training = bool(getattr(model, "training", False))
-        model.train(True)
+        model_state = _prepare_model_for_autograd_hessian(model, self._torch)
 
         try:
 
@@ -540,9 +588,7 @@ class UMAEvaluator(_BackendBase):
             hess = hess.view(nat * 3, nat * 3)
             return hess.detach().cpu().numpy().astype(np.float64)
         finally:
-            model.train(was_training)
-            for p, flag in zip(model.parameters(), pflags):
-                p.requires_grad_(flag)
+            _restore_model_after_autograd_hessian(model, model_state)
             if str(self.device).startswith("cuda"):
                 try:
                     self._torch.cuda.empty_cache()
@@ -575,17 +621,29 @@ class OrbMolEvaluator(_BackendBase):
         self.loader_kwargs = dict(loader_kwargs or {})
         self.calc_kwargs = dict(calc_kwargs or {})
 
+        if not _is_conservative_orb_model(self.model_name):
+            raise BackendError(
+                "Only conservative Orb models are supported. Requested '{}'.".format(
+                    self.model_name
+                )
+            )
+        self._conservative = True
+
         self._loader = self._resolve_loader(self.model_name)
         self._model_obj, self._adapter = self._load_model()
         self._ase_calc = self._build_ase_calculator()
-
-        lname = self.model_name.lower()
-        self._conservative = "conservative" in lname and "direct" not in lname
 
     def _resolve_loader(self, model_name):
         norm_dash = str(model_name).replace("_", "-").lower()
         if norm_dash in ORB_DEPRECATED_MODEL_ALIASES:
             model_name = ORB_DEPRECATED_MODEL_ALIASES[norm_dash]
+
+        if not _is_conservative_orb_model(model_name):
+            raise BackendError(
+                "Only conservative Orb models are supported. Requested '{}'.".format(
+                    model_name
+                )
+            )
 
         # 1) Prefer ORB_PRETRAINED_MODELS keys
         if hasattr(self._pretrained, "ORB_PRETRAINED_MODELS"):
@@ -759,16 +817,7 @@ class OrbMolEvaluator(_BackendBase):
                 .to(self.device)
                 .requires_grad_(True)
             )
-
-            pflags = []
-            if hasattr(self._model_obj, "parameters"):
-                for p in self._model_obj.parameters():
-                    pflags.append(bool(p.requires_grad))
-                    p.requires_grad_(False)
-
-            was_training = bool(getattr(self._model_obj, "training", False))
-            if hasattr(self._model_obj, "train"):
-                self._model_obj.train(True)
+            model_state = _prepare_model_for_autograd_hessian(self._model_obj, self._torch)
 
             try:
 
@@ -783,11 +832,7 @@ class OrbMolEvaluator(_BackendBase):
                 hess = hess.view(nat * 3, nat * 3)
                 return hess.detach().cpu().numpy().astype(np.float64)
             finally:
-                if hasattr(self._model_obj, "train"):
-                    self._model_obj.train(was_training)
-                if hasattr(self._model_obj, "parameters"):
-                    for p, flag in zip(self._model_obj.parameters(), pflags):
-                        p.requires_grad_(flag)
+                _restore_model_after_autograd_hessian(self._model_obj, model_state)
                 if str(self.device).startswith("cuda"):
                     try:
                         self._torch.cuda.empty_cache()
@@ -824,17 +869,27 @@ class OrbMolEvaluator(_BackendBase):
                 .clone()
                 .requires_grad_(True)
             )
+            model_state = _prepare_model_for_autograd_hessian(self._model_obj, self._torch)
 
-            def e_fn(flat):
-                setattr(graph, pos_attr, flat.view(-1, 3))
-                out = self._model_obj.predict(graph, split=False)
-                ek = self._energy_key(out)
-                return out[ek].squeeze()
+            try:
 
-            hess = self._torch.autograd.functional.hessian(e_fn, flat0, vectorize=False)
-            nat = len(symbols)
-            hess = hess.view(nat * 3, nat * 3)
-            return hess.detach().cpu().numpy().astype(np.float64)
+                def e_fn(flat):
+                    setattr(graph, pos_attr, flat.view(-1, 3))
+                    out = self._model_obj.predict(graph, split=False)
+                    ek = self._energy_key(out)
+                    return out[ek].squeeze()
+
+                hess = self._torch.autograd.functional.hessian(e_fn, flat0, vectorize=False)
+                nat = len(symbols)
+                hess = hess.view(nat * 3, nat * 3)
+                return hess.detach().cpu().numpy().astype(np.float64)
+            finally:
+                _restore_model_after_autograd_hessian(self._model_obj, model_state)
+                if str(self.device).startswith("cuda"):
+                    try:
+                        self._torch.cuda.empty_cache()
+                    except Exception:
+                        pass
         except Exception as exc:
             raise BackendError("Analytical Hessian failed for OrbMol: {}".format(exc))
 

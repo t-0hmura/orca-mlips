@@ -1,11 +1,11 @@
-! SP
+! Opt
 
 %pal
   nprocs 8
 end
 
 %method
-  ProgExt "uma"
+  ProgExt "mace"
   Ext_Params ""
 end
 

@@ -88,11 +88,6 @@ def run_orca_plugin(
     parser.add_argument("--hessian-mode", choices=["Analytical", "Numerical"], default="Analytical")
     parser.add_argument("--hessian-step", type=float, default=1.0e-3, help="Finite-difference step in Angstrom")
     parser.add_argument(
-        "--strict-hessian",
-        action="store_true",
-        help="Fail instead of falling back to numerical Hessian when analytical Hessian is unavailable.",
-    )
-    parser.add_argument(
         "--dump-hessian",
         default=None,
         help="Optional path to dump Hessian matrix (eV/Angstrom^2). Not used by ORCA itself.",
@@ -144,7 +139,6 @@ def run_orca_plugin(
         need_hessian=need_hess,
         hessian_mode=args.hessian_mode,
         hessian_step=float(args.hessian_step),
-        strict_hessian=bool(args.strict_hessian),
     )
 
     grad_ha_bohr = None
