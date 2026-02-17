@@ -9,13 +9,19 @@ set -eu
 
 test "${PBS_O_WORKDIR:-}" && cd "$PBS_O_WORKDIR"
 
-. /home/apps/Modules/init/profile.sh
-module load gaussian16.C02
-module load orca/6.1.1
+# Optional module initialization (path-independent).
+if [ -n "${MODULESHOME:-}" ] && [ -f "${MODULESHOME}/init/profile.sh" ]; then
+  . "${MODULESHOME}/init/profile.sh"
+fi
+
+if command -v module >/dev/null 2>&1; then
+  module load gaussian16.C02 || true
+  module load orca/6.1.1 || true
+fi
 
 # Optional: activate your environment that has torch/ase and backend deps
-# source /home/tohmura/miniconda3/etc/profile.d/conda.sh
-# conda activate pdb2reaction
+# source /path/to/miniconda3/etc/profile.d/conda.sh
+# conda activate mlips
 
 echo "[INFO] Python: $(command -v python3 || true)"
 
@@ -30,6 +36,6 @@ python3 plugins/mace_orca.py --list-models | head -n 20
 # Uncomment for full ORCA external execution after dependencies are installed.
 # Example ORCA snippet:
 # %method
-#   ProgExt "/data2/tohmura/pdb2reaction_workspace/mlips4orca/plugins/uma_orca.py"
+#   ProgExt "/path/to/mlips4orca/plugins/uma_orca.py"
 #   Ext_Params "--model uma-s-1p1 --task omol --device auto"
 # end
