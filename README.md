@@ -54,7 +54,7 @@ end
 
 > **Note:** Run `uma --list-models` to see available models. If the `uma` alias conflicts in your environment, use `mlips4orca-uma` instead.
 
-Additional examples: `examples/cla_freq.inp` + `examples/cla_external.inp`, `examples/sn2_freq.inp` + `examples/sn2_external.inp`, `examples/h2o_freq.inp` + `examples/h2o_external.inp`
+Additional examples: `examples/cla_hess.inp` + `examples/cla_external.inp`, `examples/sn2_hess.inp` + `examples/sn2_external.inp`, `examples/h2o_hess.inp` + `examples/h2o_external.inp`
 
 ## Using Analytical Hessian (Recommended: two-step workflow)
 
