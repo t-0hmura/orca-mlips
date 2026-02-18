@@ -8,7 +8,7 @@ For most users, defaults are sufficient.
 
 - `--model <name_or_alias_or_path>`
 - `--device auto|cpu|cuda`
-- `--dump-hessian <path>` — Dump analytical Hessian in ORCA `.hess` format (usable with `inhess Read`).
+- `--dump-hessian <path>` — Dump analytical Hessian in ORCA `.hess` format (load with `InHessName`).
 - `--list-models`
 - `--version`
 
@@ -50,7 +50,7 @@ Only conservative Orb models are supported.
 
 ## Using Analytical Hessian with ORCA
 
-ORCA's ExtTool protocol only returns energy and gradient. To use MLIP analytical Hessians as initial Hessian for TS searches, pass `--dump-hessian` via `Ext_Params` and load the file with `inhess Read`:
+ORCA's ExtTool protocol only returns energy and gradient. To use MLIP analytical Hessians as initial Hessian for TS searches, pass `--dump-hessian` via `Ext_Params` and load the file with `InHessName`:
 
 **Step 1:** Generate `.hess` file with a 1-step optimization:
 ```text
