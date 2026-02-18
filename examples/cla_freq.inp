@@ -1,15 +1,16 @@
-! ExtOpt OptTS
+! ExtOpt Opt
 
 %pal
   nprocs 8
 end
 
-%method
-  ProgExt "uma"
+%geom
+  MaxIter 1
 end
 
-%geom
-  InHessName "cla.hess"
+%method
+  ProgExt "uma"
+  Ext_Params "--dump-hessian cla.hess"
 end
 
 * xyz 0 1

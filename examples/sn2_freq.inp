@@ -1,15 +1,16 @@
-! ExtOpt OptTS
+! ExtOpt Opt
 
 %pal
   nprocs 8
 end
 
-%method
-  ProgExt "orb"
+%geom
+  MaxIter 1
 end
 
-%geom
-  InHessName "sn2.hess"
+%method
+  ProgExt "orb"
+  Ext_Params "--dump-hessian sn2.hess"
 end
 
 * xyz -1 1

@@ -4,12 +4,13 @@
   nprocs 8
 end
 
-%method
-  ProgExt "mace"
+%geom
+  MaxIter 1
 end
 
-%geom
-  InHessName "h2o.hess"
+%method
+  ProgExt "mace"
+  Ext_Params "--dump-hessian h2o.hess"
 end
 
 * xyz 0 1
