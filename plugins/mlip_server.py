@@ -39,6 +39,16 @@ class ServerError(RuntimeError):
     """Raised when server communication fails."""
 
 
+def _pid_is_alive(pid):
+    try:
+        os.kill(int(pid), 0)
+    except PermissionError:
+        return True
+    except OSError:
+        return False
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Wire protocol helpers
 # ---------------------------------------------------------------------------
@@ -84,10 +94,11 @@ def _recv_msg(sock):
 class MLIPServer(object):
     """Single-threaded Unix domain socket server wrapping an evaluator."""
 
-    def __init__(self, evaluator, socket_path, idle_timeout=600):
+    def __init__(self, evaluator, socket_path, idle_timeout=600, parent_pid=None):
         self.evaluator = evaluator
         self.socket_path = os.path.abspath(socket_path)
         self.idle_timeout = float(idle_timeout)
+        self.parent_pid = int(parent_pid) if parent_pid is not None else None
         self._running = False
         self._last_activity = time.time()
 
@@ -122,10 +133,11 @@ class MLIPServer(object):
             pass  # Not in main thread; skip signal handling
 
         print(
-            "[mlip-server] Listening on {} (idle_timeout={}s, evaluator={})".format(
+            "[mlip-server] Listening on {} (idle_timeout={}s, evaluator={}, parent_pid={})".format(
                 self.socket_path,
                 int(self.idle_timeout),
                 self.evaluator.__class__.__name__,
+                self.parent_pid if self.parent_pid is not None else "none",
             ),
             file=sys.stderr,
             flush=True,
@@ -133,6 +145,16 @@ class MLIPServer(object):
 
         try:
             while self._running:
+                if self.parent_pid is not None and not _pid_is_alive(self.parent_pid):
+                    print(
+                        "[mlip-server] Parent process {} exited, shutting down.".format(
+                            self.parent_pid
+                        ),
+                        file=sys.stderr,
+                        flush=True,
+                    )
+                    break
+
                 # Idle timeout check
                 if time.time() - self._last_activity > self.idle_timeout:
                     print(
@@ -336,7 +358,7 @@ def client_evaluate(
 # ---------------------------------------------------------------------------
 
 
-def auto_server_socket(args):
+def auto_server_socket(args, parent_pid=None):
     """Compute a deterministic socket path from evaluator arguments."""
     key_parts = [str(getattr(args, "model", "default"))]
     if hasattr(args, "device"):
@@ -345,6 +367,9 @@ def auto_server_socket(args):
         key_parts.append(str(args.task))
     if hasattr(args, "precision"):
         key_parts.append(str(args.precision))
+    if parent_pid is None:
+        parent_pid = os.getppid()
+    key_parts.append("ppid={}".format(int(parent_pid)))
 
     key = "_".join(key_parts)
     h = hashlib.md5(key.encode()).hexdigest()[:12]
@@ -352,21 +377,31 @@ def auto_server_socket(args):
     return "/tmp/mlip_server_{uid}_{hash}.sock".format(uid=uid, hash=h)
 
 
-def _build_serve_argv(executable, custom_args, socket_path, idle_timeout):
+def _build_serve_argv(
+    executable, custom_args, socket_path, idle_timeout, parent_pid=None
+):
     """Build the argv for spawning the server subprocess."""
     cmd = [sys.executable, executable]
     cmd.extend(custom_args)
     cmd.extend(["--serve", "--server-socket", socket_path])
     if idle_timeout is not None:
         cmd.extend(["--server-idle-timeout", str(int(idle_timeout))])
+    if parent_pid is not None:
+        cmd.extend(["--server-parent-pid", str(int(parent_pid))])
     return cmd
 
 
-def ensure_server(executable, custom_args, socket_path, idle_timeout=600, wait=30.0):
+def ensure_server(
+    executable,
+    custom_args,
+    socket_path,
+    idle_timeout=600,
+    parent_pid=None,
+):
     """Ensure a server is running at *socket_path*.
 
     If no server is alive, spawn one as a background subprocess and wait
-    until it becomes ready (up to *wait* seconds).
+    until it becomes ready.
 
     Returns True if the server is ready, False otherwise.
     """
@@ -380,7 +415,13 @@ def ensure_server(executable, custom_args, socket_path, idle_timeout=600, wait=3
         except OSError:
             pass
 
-    cmd = _build_serve_argv(executable, custom_args, socket_path, idle_timeout)
+    cmd = _build_serve_argv(
+        executable=executable,
+        custom_args=custom_args,
+        socket_path=socket_path,
+        idle_timeout=idle_timeout,
+        parent_pid=parent_pid,
+    )
     print(
         "[mlip-client] Starting server: {}".format(" ".join(cmd)),
         file=sys.stderr,
@@ -402,9 +443,7 @@ def ensure_server(executable, custom_args, socket_path, idle_timeout=600, wait=3
         )
         return False
 
-    # Poll until server is ready
-    deadline = time.time() + wait
-    while time.time() < deadline:
+    while True:
         if proc.poll() is not None:
             print(
                 "[mlip-client] WARNING: Server process exited unexpectedly (code={}).".format(
@@ -419,12 +458,4 @@ def ensure_server(executable, custom_args, socket_path, idle_timeout=600, wait=3
             print("[mlip-client] Server is ready.", file=sys.stderr, flush=True)
             return True
 
-        time.sleep(0.5)
-
-    print(
-        "[mlip-client] WARNING: Server did not become ready within {}s, "
-        "falling back to direct mode.".format(int(wait)),
-        file=sys.stderr,
-        flush=True,
-    )
-    return False
+        time.sleep(1)

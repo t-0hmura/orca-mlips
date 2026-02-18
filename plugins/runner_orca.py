@@ -170,6 +170,9 @@ def _add_server_args(parser):
         "--server-idle-timeout", type=int, default=600,
         help="Server idle timeout in seconds (default: 600).",
     )
+    parser.add_argument(
+        "--server-parent-pid", type=int, default=None, help=argparse.SUPPRESS
+    )
 
 
 def _handle_serve(args, make_evaluator):
@@ -180,6 +183,7 @@ def _handle_serve(args, make_evaluator):
         evaluator=evaluator,
         socket_path=args.server_socket,
         idle_timeout=args.server_idle_timeout,
+        parent_pid=args.server_parent_pid,
     )
     server.serve_forever()
     return 0
@@ -268,7 +272,8 @@ def run_orca_plugin(
 
     # --- Evaluation: auto server mode (default) or direct mode ---
     if not args.no_server:
-        socket_path = args.server_socket or auto_server_socket(args)
+        parent_pid = os.getppid()
+        socket_path = args.server_socket or auto_server_socket(args, parent_pid=parent_pid)
 
         # Build custom_args for server auto-start (exclude extinp positional arg)
         custom_args = [a for a in argv if a != args.extinp]
@@ -281,6 +286,7 @@ def run_orca_plugin(
             custom_args=custom_args,
             socket_path=socket_path,
             idle_timeout=args.server_idle_timeout,
+            parent_pid=parent_pid,
         )
         if server_ready:
             try:

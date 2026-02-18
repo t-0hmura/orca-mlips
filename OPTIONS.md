@@ -21,6 +21,8 @@ The model server starts automatically on first use and stops after idle timeout.
 - `--stop-server` — Send shutdown to a running server.
 - `--server-idle-timeout <int>` — Idle timeout in seconds (default: 600).
 
+Auto-started servers are scoped per parent ORCA process and stop automatically when that parent exits.
+
 ## UMA Options (`uma` / `mlips4orca-uma`)
 
 - `--task <omol|omat|odac|oc20|oc25|omc>`
