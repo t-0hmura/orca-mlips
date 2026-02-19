@@ -22,7 +22,7 @@ pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 pip install "orca-mlips[uma]"
 ```
 
-3. Log in to Hugging Face for UMA model access.
+3. Log in to Hugging Face for UMA model access. (No need for ORB/MACE)
 ```bash
 huggingface-cli login
 ```
