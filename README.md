@@ -116,6 +116,9 @@ end
   ProgExt "mace"
   Ext_Params "--dump-hessian h2o.hess"
 end
+* xyz 0 1
+...
+*
 ```
 then:
 ```text
@@ -126,15 +129,18 @@ end
 %geom
   InHessName "h2o.hess"
 end
+* xyz 0 1
+...
+*
 ```
 
 ## Installing Model Families
 
 ```bash
 pip install "orca-mlips[uma]"         # UMA (default)
-pip install "orca-mlips[orb]"         # OrbMol
+pip install "orca-mlips[orb]"         # ORB
 pip install "orca-mlips[mace]"        # MACE
-pip install "orca-mlips[orb,mace]"    # OrbMol + MACE
+pip install "orca-mlips[orb,mace]"    # ORB + MACE
 pip install orca-mlips                # core only
 ```
 
@@ -149,12 +155,12 @@ pip install ".[uma]"
 
 Model download notes:
 - **UMA**: Hosted on Hugging Face Hub. Run `huggingface-cli login` once.
-- **OrbMol / MACE**: Downloaded automatically on first use.
+- **ORB / MACE**: Downloaded automatically on first use.
 
 ## Upstream Model Sources
 
 - UMA / FAIR-Chem: https://github.com/facebookresearch/fairchem
-- OrbMol / orb-models: https://github.com/orbital-materials/orb-models
+- ORB / orb-models: https://github.com/orbital-materials/orb-models
 - MACE: https://github.com/ACEsuit/mace
 
 ## Advanced Options
