@@ -7,8 +7,8 @@ Three model families are supported:
 - **ORB** ([orb-models](https://github.com/orbital-materials/orb-models)) — default model: `orb_v3_conservative_omol`
 - **MACE** ([mace](https://github.com/ACEsuit/mace)) — default model: `MACE-OMOL-0`
 
-All backends provide energy and gradient, and can output analytical Hessian to ORCA `.hess` files via `--dump-hessian`.
-The model server starts automatically and stays resident, so repeated calls during optimization are fast.
+All backends provide energy and gradient, and can output **analytical Hessian** to **ORCA** `.hess` files via `--dump-hessian`.  
+> The model server starts automatically and stays resident, so repeated calls during optimization are fast.
 
 ## Quick Start (Default = UMA)
 
