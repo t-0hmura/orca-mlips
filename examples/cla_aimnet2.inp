@@ -9,7 +9,7 @@ end
 end
 
 %geom
-  InHessName "cla_aimnet2.hess"
+  InHessName "cla.hess"
 end
 
 * xyz 0 1

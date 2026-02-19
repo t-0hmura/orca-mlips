@@ -10,7 +10,7 @@ end
 
 %method
   ProgExt "aimnet2"
-  Ext_Params "--dump-hessian cla_aimnet2.hess"
+  Ext_Params "--dump-hessian cla.hess"
 end
 
 * xyz 0 1
