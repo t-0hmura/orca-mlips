@@ -19,7 +19,7 @@ pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 
 2. Install the package with UMA profile. If you need ORB/MACE, use `orca-mlips[orb]`/`orca-mlips[mace]`.
 ```bash
-pip install "orca-mlips[uma] @ git+https://github.com/t-0hmura/orca-mlips.git"
+pip install "orca-mlips[uma]"
 ```
 
 3. Log in to Hugging Face for UMA model access. (No need for ORB/MACE)
@@ -137,11 +137,11 @@ end
 ## Installing Model Families
 
 ```bash
-pip install "orca-mlips[uma] @ git+https://github.com/t-0hmura/orca-mlips.git"         # UMA (default)
-pip install "orca-mlips[orb] @ git+https://github.com/t-0hmura/orca-mlips.git"         # ORB
-pip install "orca-mlips[mace] @ git+https://github.com/t-0hmura/orca-mlips.git"        # MACE
-pip install "orca-mlips[orb,mace] @ git+https://github.com/t-0hmura/orca-mlips.git"    # ORB + MACE
-pip install orca-mlips @ git+https://github.com/t-0hmura/orca-mlips.git                # core only
+pip install "orca-mlips[uma]"         # UMA (default)
+pip install "orca-mlips[orb]"         # ORB
+pip install "orca-mlips[mace]"        # MACE
+pip install "orca-mlips[orb,mace]"    # ORB + MACE
+pip install orca-mlips                # core only
 ```
 
 > **Note:** UMA and MACE conflict at dependency level (`e3nn`). Use separate environments.
