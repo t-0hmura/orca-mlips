@@ -1109,16 +1109,14 @@ class AIMNet2Evaluator(_BackendBase):
     def _call(self, symbols, coords_ang, charge, multiplicity, with_hessian):
         from ase import Atoms
 
-        torch = self._torch
         atoms = Atoms(symbols=symbols, positions=np.asarray(coords_ang, dtype=np.float64))
         numbers = np.asarray(atoms.get_atomic_numbers(), dtype=np.int64)
 
-        coord_np = np.asarray(coords_ang, dtype=np.float64)[None, :, :]
-        coord_input = torch.tensor(coord_np, requires_grad=bool(with_hessian))
+        coord_np = np.asarray(coords_ang, dtype=np.float32).reshape(-1, 3)
 
         base = {
-            "coord": coord_input,
-            "numbers": numbers[None, :],
+            "coord": coord_np,
+            "numbers": numbers.reshape(-1),
             "charge": np.asarray([float(charge)], dtype=np.float32),
             "mult": np.asarray([float(multiplicity)], dtype=np.float32),
         }
@@ -1128,17 +1126,7 @@ class AIMNet2Evaluator(_BackendBase):
             "hessian": bool(with_hessian),
         }
 
-        try:
-            out = self._calculator(base, **args)
-        except Exception:
-            coord_fallback = torch.tensor(coord_np, requires_grad=bool(with_hessian))
-            fallback = {
-                "coords": coord_fallback,
-                "numbers": numbers[None, :],
-                "charge": np.asarray([float(charge)], dtype=np.float32),
-                "mult": np.asarray([float(multiplicity)], dtype=np.float32),
-            }
-            out = self._calculator(fallback, **args)
+        out = self._calculator(base, **args)
 
         if isinstance(out, tuple):
             out = list(out)
