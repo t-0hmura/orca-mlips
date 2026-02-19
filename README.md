@@ -18,7 +18,7 @@ Requires **Python 3.9** or later.
 
 ## Quick Start (Default = UMA)
 
-1. Install PyTorch for your environment (CUDA/CPU).
+1. Install PyTorch suitable for your environment (CUDA/CPU).
 ```bash
 pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 ```
