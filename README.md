@@ -12,7 +12,7 @@ All backends provide energy and gradient, and can output **analytical Hessian** 
 
 ## Quick Start (Default = UMA)
 
-1. Install PyTorch (CUDA 12.9 build).
+1. Install PyTorch for your environment (CUDA/CPU).
 ```bash
 pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 ```
