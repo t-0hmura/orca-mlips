@@ -3,9 +3,9 @@
 MLIP (Machine Learning Interatomic Potential) plugins for ORCA `ExtTool` (`ProgExt`) interface.
 
 Three model families are supported:
-- **UMA** (FAIR-Chem) — default model: `uma-s-1p1`
-- **OrbMol** (orb-models) — default model: `orb_v3_conservative_omol`
-- **MACE** — default model: `MACE-OMOL-0`
+- **UMA** ([fairchem](https://github.com/facebookresearch/fairchem)) — default model: `uma-s-1p1`
+- **ORB** ([orb-models](https://github.com/orbital-materials/orb-models)) — default model: `orb_v3_conservative_omol`
+- **MACE** ([mace](https://github.com/ACEsuit/mace)) — default model: `MACE-OMOL-0`
 
 All backends provide energy and gradient, and can output analytical Hessian to ORCA `.hess` files via `--dump-hessian`.
 The model server starts automatically and stays resident, so repeated calls during optimization are fast.
