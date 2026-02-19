@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite it using the information below.
+title: orca-mlips
+type: software
+authors:
+  - family-names: Ohmura
+    given-names: Takuto
+    orcid: "https://orcid.org/0009-0008-1215-0168"
+license: MIT
+repository-code: "https://github.com/t-0hmura/orca-mlips"
+version: "0.0.1"
+date-released: "2026-02-19"
