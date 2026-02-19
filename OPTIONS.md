@@ -75,6 +75,22 @@ The `mp:` prefix selects Materials Project models, `off:` selects organic force 
 - `--dtype float32|float64` (default: `float64`)
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for MACE calculator.
 
+## AIMNet2 Options (`aimnet2` / `orca-mlips-aimnet2`)
+
+Available models (default: **`aimnet2`**):
+
+| Model | Description |
+|-------|-------------|
+| `aimnet2` | AIMNet2 base model |
+| `aimnet2_b973c` | AIMNet2 with B97-3c functional |
+| `aimnet2_2025` | AIMNet2 B97-3c + improved intermolecular interactions |
+| `aimnet2nse` | AIMNet2 open-shell model |
+| `aimnet2pd` | AIMNet2 for Pd-containing systems |
+| `<local_model_path>` | Local checkpoint file path |
+| `<https://...model>` | Model URL |
+
+- `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for AIMNet2 calculator.
+
 ## Server Options
 
 The model server starts automatically on first use and stops after idle timeout. These options are for advanced use only.

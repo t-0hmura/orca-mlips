@@ -2,10 +2,11 @@
 
 MLIP (Machine Learning Interatomic Potential) plugins for ORCA `ExtTool` (`ProgExt`) interface.
 
-Three model families are supported:
+Four model families are supported:
 - **UMA** ([fairchem](https://github.com/facebookresearch/fairchem)) — default model: `uma-s-1p1`
 - **ORB** ([orb-models](https://github.com/orbital-materials/orb-models)) — default model: `orb_v3_conservative_omol`
 - **MACE** ([mace](https://github.com/ACEsuit/mace)) — default model: `MACE-OMOL-0`
+- **AIMNet2** ([aimnetcentral](https://github.com/isayevlab/aimnetcentral)) — default model: `aimnet2`
 
 All backends provide energy and gradient, and can output **analytical Hessian** to **ORCA** `.hess` files via `--dump-hessian`.  
 > The model server starts automatically and stays resident, so repeated calls during optimization are fast.
@@ -17,17 +18,17 @@ All backends provide energy and gradient, and can output **analytical Hessian** 
 pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 ```
 
-2. Install the package with UMA profile. If you need ORB/MACE, use `orca-mlips[orb]`/`orca-mlips[mace]`.
+2. Install the package with UMA profile. If you need ORB/MACE/AIMNet2, use `orca-mlips[orb]`/`orca-mlips[mace]`/`orca-mlips[aimnet2]`.
 ```bash
 pip install "orca-mlips[uma]"
 ```
 
-3. Log in to Hugging Face for UMA model access. (Not required for ORB/MACE)
+3. Log in to Hugging Face for UMA model access. (Not required for ORB/MACE/AIMNet2)
 ```bash
 huggingface-cli login
 ```
 
-4. Use in an ORCA input file. If you use ORB/MACE, use `ProgExt "orb"`/`ProgExt "mace"`.
+4. Use in an ORCA input file. If you use ORB/MACE/AIMNet2, use `ProgExt "orb"`/`ProgExt "mace"`/`ProgExt "aimnet2"`.
 For detailed ORCA External Tool / `ExtOpt` usage, see https://www.faccts.de/docs/orca/6.1/tutorials/workflows/extopt.html
 ```text
 ! ExtOpt Opt
@@ -56,7 +57,7 @@ end
 
 > **Note:** Run `uma --list-models` to see available models. If the `uma` alias conflicts in your environment, use `orca-mlips-uma` instead.
 
-Additional examples: `examples/cla_hess.inp` + `examples/cla_external.inp`, `examples/sn2_hess.inp` + `examples/sn2_external.inp`, `examples/h2o_hess.inp` + `examples/h2o_external.inp`
+Additional examples: `examples/cla_hess_uma.inp` + `examples/cla_uma.inp`, `examples/sn2_hess_orb.inp` + `examples/sn2_orb.inp`, `examples/water_hess_mace.inp` + `examples/water_mace.inp`, `examples/cla_hess_aimnet2.inp` + `examples/cla_aimnet2.inp`
 
 ## Using Analytical Hessian (Required two-step workflow in ORCA)
 
@@ -115,7 +116,7 @@ Same two-step workflow with `! ExtOpt Opt` instead of `! ExtOpt OptTS`:
 end
 %method
   ProgExt "mace"
-  Ext_Params "--dump-hessian h2o.hess"
+  Ext_Params "--dump-hessian water.hess"
 end
 * xyz 0 1
 ...
@@ -128,7 +129,7 @@ then:
   ProgExt "mace"
 end
 %geom
-  InHessName "h2o.hess"
+  InHessName "water.hess"
 end
 * xyz 0 1
 ...
@@ -142,6 +143,8 @@ pip install "orca-mlips[uma]"         # UMA (default)
 pip install "orca-mlips[orb]"         # ORB
 pip install "orca-mlips[mace]"        # MACE
 pip install "orca-mlips[orb,mace]"    # ORB + MACE
+pip install "orca-mlips[aimnet2]"     # AIMNet2
+pip install "orca-mlips[orb,mace,aimnet2]"  # ORB + MACE + AIMNet2
 pip install orca-mlips                # core only
 ```
 
@@ -156,25 +159,27 @@ pip install ".[uma]"
 
 Model download notes:
 - **UMA**: Hosted on Hugging Face Hub. Run `huggingface-cli login` once.
-- **ORB / MACE**: Downloaded automatically on first use.
+- **ORB / MACE / AIMNet2**: Downloaded automatically on first use.
 
 ## Upstream Model Sources
 
 - UMA / FAIR-Chem: https://github.com/facebookresearch/fairchem
 - ORB / orb-models: https://github.com/orbital-materials/orb-models
 - MACE: https://github.com/ACEsuit/mace
+- AIMNet2: https://github.com/isayevlab/aimnetcentral
 
 ## Advanced Options
 
 See `OPTIONS.md` for backend-specific tuning parameters.
 
 Command aliases:
-- Short: `uma`, `orb`, `mace`
-- Prefixed: `orca-mlips-uma`, `orca-mlips-orb`, `orca-mlips-mace`
+- Short: `uma`, `orb`, `mace`, `aimnet2`
+- Prefixed: `orca-mlips-uma`, `orca-mlips-orb`, `orca-mlips-mace`, `orca-mlips-aimnet2`
 
 ## Troubleshooting
 
 - **`ProgExt "uma"` runs the wrong plugin** — Use `ProgExt "orca-mlips-uma"` to avoid alias conflicts.
+- **`ProgExt "aimnet2"` runs the wrong plugin** — Use `ProgExt "orca-mlips-aimnet2"` to avoid alias conflicts.
 - **`uma` command not found** — Activate the conda environment where the package is installed.
 - **UMA model download fails (401/403)** — Run `huggingface-cli login`. Some models require access approval on Hugging Face.
 - **Works interactively but fails in PBS jobs** — Use absolute path from `which uma` in the ORCA input.

@@ -9,7 +9,7 @@ end
 end
 
 %geom
-  InHessName "h2o.hess"
+  InHessName "water.hess"
 end
 
 * xyz 0 1

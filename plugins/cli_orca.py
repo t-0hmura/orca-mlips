@@ -12,8 +12,10 @@ if __package__ in (None, ""):
         sys.path.insert(0, _HERE)
     from mlip_backends import (
         MACEEvaluator,
+        AIMNet2Evaluator,
         OrbMolEvaluator,
         UMAEvaluator,
+        get_available_aimnet2_models,
         get_available_mace_models,
         get_available_orb_models,
         get_available_uma_models,
@@ -23,8 +25,10 @@ if __package__ in (None, ""):
 else:
     from .mlip_backends import (
         MACEEvaluator,
+        AIMNet2Evaluator,
         OrbMolEvaluator,
         UMAEvaluator,
+        get_available_aimnet2_models,
         get_available_mace_models,
         get_available_orb_models,
         get_available_uma_models,
@@ -109,6 +113,16 @@ def _mace_add_args(parser):
     )
 
 
+def _aimnet2_add_args(parser):
+    parser.add_argument(
+        "--calc-opt",
+        action="append",
+        default=[],
+        metavar="KEY=VALUE",
+        help="Extra kwargs passed to AIMNet2 calculator (advanced).",
+    )
+
+
 def _uma_make_evaluator(args):
     return UMAEvaluator(
         model=args.model,
@@ -143,6 +157,14 @@ def _mace_make_evaluator(args):
     )
 
 
+def _aimnet2_make_evaluator(args):
+    return AIMNet2Evaluator(
+        model=args.model,
+        device=args.device,
+        calc_kwargs=_parse_kv_list(args.calc_opt, "--calc-opt"),
+    )
+
+
 _BACKEND_CONFIG = {
     "uma": {
         "default_model": "uma-s-1p1",
@@ -163,6 +185,13 @@ _BACKEND_CONFIG = {
         "add_args": _mace_add_args,
         "make_evaluator": _mace_make_evaluator,
         "available_models": get_available_mace_models,
+        "available_tasks": None,
+    },
+    "aimnet2": {
+        "default_model": "aimnet2",
+        "add_args": _aimnet2_add_args,
+        "make_evaluator": _aimnet2_make_evaluator,
+        "available_models": get_available_aimnet2_models,
         "available_tasks": None,
     },
 }

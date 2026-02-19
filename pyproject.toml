@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "orca-mlips"
 dynamic = ["version"]
-description = "MLIP plugins for ORCA ExtTool (UMA, OrbMol, MACE)"
+description = "MLIP plugins for ORCA ExtTool (UMA, OrbMol, MACE, AIMNet2)"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -17,6 +17,7 @@ dependencies = [
 uma = ["torch>=2.8.0", "fairchem-core>=2.13"]
 orb = ["torch>=2.8.0", "orb-models"]
 mace = ["torch>=2.8.0", "mace-torch"]
+aimnet2 = ["torch>=2.8.0", "aimnet"]
 
 [project.urls]
 Homepage = "https://github.com/t-0hmura/orca-mlips"
@@ -26,9 +27,11 @@ Repository = "https://github.com/t-0hmura/orca-mlips"
 orca-mlips-uma = "orca_mlips_plugins.uma_orca:main"
 orca-mlips-orb = "orca_mlips_plugins.orbmol_orca:main"
 orca-mlips-mace = "orca_mlips_plugins.mace_orca:main"
+orca-mlips-aimnet2 = "orca_mlips_plugins.aimnet2_orca:main"
 uma = "orca_mlips_plugins.uma_orca:main"
 orb = "orca_mlips_plugins.orbmol_orca:main"
 mace = "orca_mlips_plugins.mace_orca:main"
+aimnet2 = "orca_mlips_plugins.aimnet2_orca:main"
 
 [tool.setuptools]
 packages = ["orca_mlips_plugins"]

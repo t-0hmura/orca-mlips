@@ -10,7 +10,7 @@ end
 
 %method
   ProgExt "mace"
-  Ext_Params "--dump-hessian h2o.hess"
+  Ext_Params "--dump-hessian water.hess"
 end
 
 * xyz 0 1

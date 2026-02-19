@@ -65,6 +65,8 @@ def _backend_alias(plugin_name):
         return "orb"
     if "mace" in low:
         return "mace"
+    if "aimnet2" in low:
+        return "aimnet2"
     return "uma"
 
 
