@@ -30,7 +30,7 @@ Run `uma --list-models` to see the full list including `esen-*` variants. Models
 - `--max-neigh <int>` — Override graph neighbor cap.
 - `--radius <float>` — Override graph cutoff radius (Angstrom).
 - `--r-edges` — Enable distance edge attributes.
-- `--otf-graph` / `--no-otf-graph` — Toggle OTF graph collation (default: on).
+- `--otf-graph` / `--no-otf-graph` — Toggle on-the-fly (OTF) graph construction (default: on).
 
 ## ORB Options (`orb` / `orca-mlips-orb`)
 

@@ -29,6 +29,7 @@ import socket
 import struct
 import subprocess
 import sys
+import tempfile
 import time
 import traceback
 
@@ -116,6 +117,7 @@ class MLIPServer(object):
 
         srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         srv.bind(self.socket_path)
+        os.chmod(self.socket_path, 0o600)
         srv.listen(5)
         srv.settimeout(1.0)
 
@@ -269,27 +271,29 @@ class MLIPServer(object):
 
 def server_is_alive(socket_path, timeout=5.0):
     """Return True if a server is responding at *socket_path*."""
+    sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
-        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(timeout)
         sock.connect(os.path.abspath(socket_path))
         _send_msg(sock, {"action": "ping"})
         resp = _recv_msg(sock)
-        sock.close()
         return resp is not None and resp.get("status") == "ok"
     except Exception:
         return False
+    finally:
+        sock.close()
 
 
 def send_shutdown(socket_path, timeout=10.0):
     """Send a shutdown command to the server."""
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-    sock.settimeout(timeout)
-    sock.connect(os.path.abspath(socket_path))
-    _send_msg(sock, {"action": "shutdown"})
-    resp = _recv_msg(sock)
-    sock.close()
-    return resp
+    try:
+        sock.settimeout(timeout)
+        sock.connect(os.path.abspath(socket_path))
+        _send_msg(sock, {"action": "shutdown"})
+        return _recv_msg(sock)
+    finally:
+        sock.close()
 
 
 def client_evaluate(
@@ -374,7 +378,10 @@ def auto_server_socket(args, parent_pid=None):
     key = "_".join(key_parts)
     h = hashlib.md5(key.encode()).hexdigest()[:12]
     uid = os.getuid()
-    return "/tmp/mlip_server_{uid}_{hash}.sock".format(uid=uid, hash=h)
+    return os.path.join(
+        tempfile.gettempdir(),
+        "mlip_server_{uid}_{hash}.sock".format(uid=uid, hash=h),
+    )
 
 
 def _build_serve_argv(
@@ -443,7 +450,9 @@ def ensure_server(
         )
         return False
 
-    while True:
+    startup_timeout = 300
+    waited = 0
+    while waited < startup_timeout:
         if proc.poll() is not None:
             print(
                 "[mlip-client] WARNING: Server process exited unexpectedly (code={}).".format(
@@ -459,3 +468,13 @@ def ensure_server(
             return True
 
         time.sleep(1)
+        waited += 1
+
+    print(
+        "[mlip-client] WARNING: Server did not become ready within {}s.".format(
+            startup_timeout
+        ),
+        file=sys.stderr,
+        flush=True,
+    )
+    return False

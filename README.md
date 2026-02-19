@@ -8,8 +8,11 @@ Four model families are currently supported:
 - **MACE** ([mace](https://github.com/ACEsuit/mace)) — default model: `MACE-OMOL-0`
 - **AIMNet2** ([aimnetcentral](https://github.com/isayevlab/aimnetcentral)) — default model: `aimnet2`
 
-All backends provide energy and gradient, and can output **analytical Hessian** to **ORCA** `.hess` files via `--dump-hessian`.  
-> The model server starts automatically and stays resident, so repeated calls during optimization are fast.
+All backends provide energy and gradient, and can output an **analytical Hessian** in **ORCA** `.hess` format via `--dump-hessian`.  
+
+> The model server starts automatically and stays resident in memory, so repeated calls during optimization are fast.
+
+Requires **Python 3.9** or later.
 
 ## Quick Start (Default = UMA)
 
@@ -69,7 +72,7 @@ Additional examples: `examples/cla_hess_uma.inp` + `examples/cla_uma.inp`, `exam
 
 ## Using Analytical Hessian (optional two-step workflow)
 
-Optimization and TS searches work without an initial Hessian — ORCA will build one internally. Providing an MLIP analytical Hessian via `--dump-hessian` + `InHessName` improves convergence, especially for TS searches.
+Optimization and TS searches can run without providing an initial Hessian — ORCA builds one internally. Providing an analytical Hessian from the MLIP via `--dump-hessian` + `InHessName` improves convergence, especially for TS searches.
 
 > **Why two steps?** ORCA has no API to receive Hessian data directly through `ExtTool`. The only supported path is:
 > 1) dump Hessian with `--dump-hessian <file>` in step 1,  
@@ -96,7 +99,7 @@ end
 ...
 *
 ```
-A 1-step optimization that triggers the ExtTool call and dumps the analytical Hessian in ORCA `.hess` format. `! ExtOpt` is required to make ORCA use the external tool instead of its own internal methods. The job may exit non-zero (not converged), but the `.hess` file is created.
+A single-iteration optimization that triggers the ExtTool call and writes the analytical Hessian in ORCA `.hess` format. `! ExtOpt` is required to make ORCA use the external tool instead of its own internal methods. The job may exit non-zero (not converged), but the `.hess` file is created.
 
 **Step 2: TS optimization reading Hessian**
 ```text
