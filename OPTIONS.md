@@ -75,47 +75,6 @@ The `mp:` prefix selects Materials Project models, `off:` selects organic force 
 - `--dtype float32|float64` (default: `float64`)
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for MACE calculator.
 
-## Using Analytical Hessian with ORCA
-
-ORCA's ExtTool protocol only returns energy and gradient. To use MLIP analytical Hessians as initial Hessian for TS searches, pass `--dump-hessian` via `Ext_Params` and load the file with `InHessName`:
-
-**Step 1:** Generate `.hess` file with a 1-step optimization:
-```text
-! ExtOpt Opt
-
-%geom
-  MaxIter 1
-end
-
-%method
-  ProgExt "uma"
-  Ext_Params "--dump-hessian mlip.hess"
-end
-
-* xyz 0 1
-...
-*
-```
-
-**Step 2:** Load the Hessian for TS optimization:
-```text
-! ExtOpt OptTS
-
-%method
-  ProgExt "uma"
-end
-
-%geom
-  InHessName "mlip.hess"
-end
-
-* xyz 0 1
-...
-*
-```
-
-`! ExtOpt` is required to make ORCA use the external tool. See `README.md` for the full two-step workflow rationale.
-
 ## Server Options
 
 The model server starts automatically on first use and stops after idle timeout. These options are for advanced use only.
