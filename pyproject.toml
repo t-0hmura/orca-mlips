@@ -37,7 +37,7 @@ include-package-data = false
 [tool.setuptools_scm]
 version_scheme = "guess-next-dev"
 local_scheme = "no-local-version"
-fallback_version = "0.0.0"
+fallback_version = "1.0.0"
 
 [tool.setuptools.package-dir]
 orca_mlips_plugins = "plugins"
