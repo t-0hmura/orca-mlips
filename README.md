@@ -67,7 +67,9 @@ end
 
 Additional examples: `examples/cla_hess_uma.inp` + `examples/cla_uma.inp`, `examples/sn2_hess_orb.inp` + `examples/sn2_orb.inp`, `examples/water_hess_mace.inp` + `examples/water_mace.inp`, `examples/cla_hess_aimnet2.inp` + `examples/cla_aimnet2.inp`
 
-## Using Analytical Hessian (Required two-step workflow in ORCA)
+## Using Analytical Hessian (optional two-step workflow)
+
+Optimization and TS searches work without an initial Hessian — ORCA will build one internally. Providing an MLIP analytical Hessian via `--dump-hessian` + `InHessName` improves convergence, especially for TS searches.
 
 > **Why two steps?** ORCA has no API to receive Hessian data directly through `ExtTool`. The only supported path is:
 > 1) dump Hessian with `--dump-hessian <file>` in step 1,  
