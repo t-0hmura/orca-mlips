@@ -25,6 +25,15 @@ Auto-started servers are scoped per parent ORCA process and stop automatically w
 
 ## UMA Options (`uma` / `orca-mlips-uma`)
 
+Available models (default: **`uma-s-1p1`**):
+
+| Model | Description |
+|-------|-------------|
+| `uma-s-1p1` | Small model, fastest while still SOTA on most benchmarks (6.6M/150M active/total params) |
+| `uma-m-1p1` | Best across all metrics, slower and more memory intensive (50M/1.4B active/total params) |
+
+Run `uma --list-models` to see the full list including `esen-*` variants. Models are hosted on Hugging Face Hub (`huggingface-cli login` required).
+
 - `--task <omol|omat|odac|oc20|oc25|omc>`
 - `--list-tasks`
 - `--workers <int>` — Predictor worker count.
@@ -36,7 +45,19 @@ Auto-started servers are scoped per parent ORCA process and stop automatically w
 
 ## ORB Options (`orb` / `orca-mlips-orb`)
 
-Only conservative ORB models are supported.
+Only conservative ORB models are supported. Underscores and dashes are interchangeable (e.g., `orb_v3_conservative_omol` = `orb-v3-conservative-omol`).
+
+Available models (default: **`orb_v3_conservative_omol`**):
+
+| Model | Dataset |
+|-------|---------|
+| `orb-v3-conservative-omol` | OMol25 (molecules) |
+| `orb-v3-conservative-20-omat` | OMAT (materials, max 20 neighbors) |
+| `orb-v3-conservative-inf-omat` | OMAT (materials, unlimited neighbors) |
+| `orb-v3-conservative-20-mpa` | MPA (materials, max 20 neighbors) |
+| `orb-v3-conservative-inf-mpa` | MPA (materials, unlimited neighbors) |
+
+Run `orb --list-models` to see the full list. Models are downloaded automatically on first use.
 
 - `--precision <str>` (default: `float32-high`)
 - `--compile-model`
@@ -44,6 +65,23 @@ Only conservative ORB models are supported.
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for `ORBCalculator`.
 
 ## MACE Options (`mace` / `orca-mlips-mace`)
+
+Available models (default: **`MACE-OMOL-0`**):
+
+| Model | Description |
+|-------|-------------|
+| `MACE-OMOL-0` | OMOL large model for molecules and transition metals |
+| `mp:small`, `mp:medium`, `mp:large` | MACE-MP-0 (Materials Project, 89 elements) |
+| `mp:medium-0b3` | MACE-MP-0b3, improved high-pressure stability |
+| `mp:medium-mpa-0` | MACE-MPA-0, MPTrj + sAlex |
+| `mp:small-omat-0`, `mp:medium-omat-0` | MACE-OMAT-0 |
+| `mp:mace-matpes-pbe-0` | MACE-MATPES PBE functional |
+| `mp:mace-matpes-r2scan-0` | MACE-MATPES r2SCAN functional |
+| `mp:mh-0`, `mp:mh-1` | MACE-MH cross-domain (surfaces/bulk/molecules) |
+| `off:small`, `off:medium`, `off:large` | MACE-OFF23 for organic molecules |
+| `anicc` | ANI-CC model |
+
+The `mp:` prefix selects Materials Project models, `off:` selects organic force field models. A local file path or URL can also be passed. Run `mace --list-models` to see the full list. Models are downloaded automatically on first use.
 
 - `--dtype float32|float64` (default: `float64`)
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for MACE calculator.
