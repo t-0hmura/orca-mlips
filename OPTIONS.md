@@ -12,17 +12,6 @@ For most users, defaults are sufficient.
 - `--list-models`
 - `--version`
 
-## Server Options
-
-The model server starts automatically on first use and stops after idle timeout. These options are for advanced use only.
-
-- `--no-server` — Disable auto server; load model directly each time.
-- `--server-socket <path>` — Manual socket path.
-- `--stop-server` — Send shutdown to a running server.
-- `--server-idle-timeout <int>` — Idle timeout in seconds (default: 600).
-
-Auto-started servers are scoped per parent ORCA process and stop automatically when that parent exits.
-
 ## UMA Options (`uma` / `orca-mlips-uma`)
 
 Available models (default: **`uma-s-1p1`**):
@@ -126,6 +115,17 @@ end
 ```
 
 `! ExtOpt` is required to make ORCA use the external tool. See `README.md` for the full two-step workflow rationale.
+
+## Server Options
+
+The model server starts automatically on first use and stops after idle timeout. These options are for advanced use only.
+
+- `--no-server` — Disable auto server; load model directly each time.
+- `--server-socket <path>` — Manual socket path.
+- `--stop-server` — Send shutdown to a running server.
+- `--server-idle-timeout <int>` — Idle timeout in seconds (default: 600).
+
+Auto-started servers are scoped per parent ORCA process and stop automatically when that parent exits.
 
 ## `KEY=VALUE` Parsing Rules
 
