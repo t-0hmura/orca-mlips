@@ -7,7 +7,8 @@ Three model families are supported:
 - **OrbMol** (orb-models) — default model: `orb_v3_conservative_omol`
 - **MACE** — default model: `MACE-OMOL-0`
 
-All backends provide energy, gradient, and analytical Hessian. The model server starts automatically and stays resident, so repeated calls during optimization are fast.
+All backends provide energy and gradient, and can output analytical Hessian to ORCA `.hess` files via `--dump-hessian`.
+The model server starts automatically and stays resident, so repeated calls during optimization are fast.
 
 ## Quick Start (Default = UMA)
 
@@ -56,9 +57,11 @@ end
 
 Additional examples: `examples/cla_hess.inp` + `examples/cla_external.inp`, `examples/sn2_hess.inp` + `examples/sn2_external.inp`, `examples/h2o_hess.inp` + `examples/h2o_external.inp`
 
-## Using Analytical Hessian (Recommended: two-step workflow)
+## Using Analytical Hessian (Required two-step workflow in ORCA)
 
-> **Why two steps?** ORCA's ExtTool protocol only passes energy and gradient back to ORCA — the Hessian is never transmitted through the protocol. The only way to use the exact analytical Hessian from the MLIP is to dump it to a `.hess` file via `--dump-hessian`, then load it with `InHessName`. Without this, ORCA falls back to an approximate model Hessian or expensive numerical differentiation. The analytical Hessian leads to faster and more reliable convergence.
+> **Why two steps?** ORCA has no API to receive Hessian data directly through `ExtTool`. The only supported path is:
+> 1) dump Hessian with `--dump-hessian <file>` in step 1,  
+> 2) read it in step 2 with `InHessName <file>`.
 
 Generate a `.hess` file first, then load it via `InHessName`.
 
