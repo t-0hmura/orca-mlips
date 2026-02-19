@@ -17,7 +17,7 @@ All backends provide energy and gradient, and can output **analytical Hessian** 
 pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 ```
 
-2. Install the package with UMA profile.
+2. Install the package with UMA profile. If you need ORB/MACE, use `orca-mlips[orb]`/`orca-mlips[mace]`.
 ```bash
 pip install "orca-mlips[uma]"
 ```
@@ -27,7 +27,7 @@ pip install "orca-mlips[uma]"
 huggingface-cli login
 ```
 
-4. Use in an ORCA input file.
+4. Use in an ORCA input file. If you use ORB/MACE, use `ProgExt "orb"`/`ProgExt "mace"`.
 ```text
 ! ExtOpt Opt
 
