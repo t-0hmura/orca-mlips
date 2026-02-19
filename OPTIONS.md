@@ -61,7 +61,7 @@ Run `orb --list-models` to see the full list. Models are downloaded automaticall
 
 - `--precision <str>` (default: `float32-high`)
 - `--compile-model`
-- `--loader-opt KEY=VALUE` (repeatable) — Extra kwargs for Orb loader.
+- `--loader-opt KEY=VALUE` (repeatable) — Extra kwargs for ORB loader.
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for `ORBCalculator`.
 
 ## MACE Options (`mace` / `orca-mlips-mace`)
