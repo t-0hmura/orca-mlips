@@ -78,12 +78,13 @@ def _looks_like_gaussian_invocation(argv):
 
 def _version_text(plugin_name):
     version = "dev"
+    dist_name = "orca-mlips"
     if _importlib_metadata is not None:
         try:
-            version = _importlib_metadata.version("mlips4orca")
+            version = _importlib_metadata.version(dist_name)
         except Exception:
             pass
-    return "{} (mlips4orca {})".format(plugin_name, version)
+    return "{} ({} {})".format(plugin_name, dist_name, version)
 
 
 _STANDARD_ATOMIC_MASSES = {
@@ -250,7 +251,7 @@ def run_orca_plugin(
             "Detected Gaussian-style invocation (LAYER + 5 generated files). "
             "This command appears to be an ORCA plugin, but it was called in Gaussian style. "
             "If short aliases are conflicting, set Gaussian External to '{}'.".format(
-                "mlips4g16-" + backend
+                "g16-mlips-" + backend
             )
         )
 

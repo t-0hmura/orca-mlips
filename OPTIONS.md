@@ -1,4 +1,4 @@
-# OPTIONS.md (mlips4orca)
+# OPTIONS.md (orca-mlips)
 
 For most users, defaults are sufficient.
 
@@ -23,7 +23,7 @@ The model server starts automatically on first use and stops after idle timeout.
 
 Auto-started servers are scoped per parent ORCA process and stop automatically when that parent exits.
 
-## UMA Options (`uma` / `mlips4orca-uma`)
+## UMA Options (`uma` / `orca-mlips-uma`)
 
 - `--task <omol|omat|odac|oc20|oc25|omc>`
 - `--list-tasks`
@@ -34,7 +34,7 @@ Auto-started servers are scoped per parent ORCA process and stop automatically w
 - `--r-edges` — Enable distance edge attributes.
 - `--otf-graph` / `--no-otf-graph` — Toggle OTF graph collation (default: on).
 
-## OrbMol Options (`orb` / `mlips4orca-orb`)
+## OrbMol Options (`orb` / `orca-mlips-orb`)
 
 Only conservative Orb models are supported.
 
@@ -43,7 +43,7 @@ Only conservative Orb models are supported.
 - `--loader-opt KEY=VALUE` (repeatable) — Extra kwargs for Orb loader.
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for `ORBCalculator`.
 
-## MACE Options (`mace` / `mlips4orca-mace`)
+## MACE Options (`mace` / `orca-mlips-mace`)
 
 - `--dtype float32|float64` (default: `float64`)
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for MACE calculator.

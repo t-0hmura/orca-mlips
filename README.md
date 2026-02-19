@@ -1,4 +1,4 @@
-# mlips4orca
+# orca-mlips
 
 MLIP (Machine Learning Interatomic Potential) plugins for ORCA `ExtTool` (`ProgExt`) interface.
 
@@ -18,7 +18,7 @@ pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 
 2. Install the package with UMA profile.
 ```bash
-pip install "mlips4orca[uma]"
+pip install "orca-mlips[uma]"
 ```
 
 3. Log in to Hugging Face for UMA model access.
@@ -52,7 +52,7 @@ Other backends:
 end
 ```
 
-> **Note:** Run `uma --list-models` to see available models. If the `uma` alias conflicts in your environment, use `mlips4orca-uma` instead.
+> **Note:** Run `uma --list-models` to see available models. If the `uma` alias conflicts in your environment, use `orca-mlips-uma` instead.
 
 Additional examples: `examples/cla_hess.inp` + `examples/cla_external.inp`, `examples/sn2_hess.inp` + `examples/sn2_external.inp`, `examples/h2o_hess.inp` + `examples/h2o_external.inp`
 
@@ -128,19 +128,19 @@ end
 ## Installing Model Families
 
 ```bash
-pip install "mlips4orca[uma]"         # UMA (default)
-pip install "mlips4orca[orb]"         # OrbMol
-pip install "mlips4orca[mace]"        # MACE
-pip install "mlips4orca[orb,mace]"    # OrbMol + MACE
-pip install mlips4orca                # core only
+pip install "orca-mlips[uma]"         # UMA (default)
+pip install "orca-mlips[orb]"         # OrbMol
+pip install "orca-mlips[mace]"        # MACE
+pip install "orca-mlips[orb,mace]"    # OrbMol + MACE
+pip install orca-mlips                # core only
 ```
 
 > **Note:** UMA and MACE conflict at dependency level (`e3nn`). Use separate environments.
 
 Local install:
 ```bash
-git clone https://github.com/t-0hmura/mlips4orca.git
-cd mlips4orca
+git clone https://github.com/t-0hmura/orca-mlips.git
+cd orca-mlips
 pip install ".[uma]"
 ```
 
@@ -160,11 +160,11 @@ See `OPTIONS.md` for backend-specific tuning parameters.
 
 Command aliases:
 - Short: `uma`, `orb`, `mace`
-- Prefixed: `mlips4orca-uma`, `mlips4orca-orb`, `mlips4orca-mace`
+- Prefixed: `orca-mlips-uma`, `orca-mlips-orb`, `orca-mlips-mace`
 
 ## Troubleshooting
 
-- **`ProgExt "uma"` runs the wrong plugin** — Use `ProgExt "mlips4orca-uma"` to avoid alias conflicts.
+- **`ProgExt "uma"` runs the wrong plugin** — Use `ProgExt "orca-mlips-uma"` to avoid alias conflicts.
 - **`uma` command not found** — Activate the conda environment where the package is installed.
 - **UMA model download fails (401/403)** — Run `huggingface-cli login`. Some models require access approval on Hugging Face.
 - **Works interactively but fails in PBS jobs** — Use absolute path from `which uma` in the ORCA input.

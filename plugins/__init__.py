@@ -1,1 +1,1 @@
-"""mlips4orca plugin package."""
+"""orca-mlips plugin package."""

@@ -443,7 +443,7 @@ class UMAEvaluator(_BackendBase):
             from fairchem.core.datasets.atomic_data import AtomicData
         except Exception as exc:
             raise BackendError(
-                "UMA backend requires fairchem-core and torch. Install with: pip install \"mlips4orca[uma]\""
+                "UMA backend requires fairchem-core and torch. Install with: pip install \"orca-mlips[uma]\""
             ) from exc
 
         self._torch = torch
@@ -605,7 +605,7 @@ class OrbMolEvaluator(_BackendBase):
             from orb_models.forcefield import pretrained as orb_pretrained
         except Exception as exc:
             raise BackendError(
-                "OrbMol backend requires orb-models and torch. Install with: pip install \"mlips4orca[orb]\""
+                "OrbMol backend requires orb-models and torch. Install with: pip install \"orca-mlips[orb]\""
             ) from exc
 
         self._torch = torch
@@ -892,7 +892,7 @@ class MACEEvaluator(_BackendBase):
             import torch
         except Exception as exc:
             raise BackendError(
-                "MACE backend requires torch and mace-torch. Install with: pip install \"mlips4orca[mace]\""
+                "MACE backend requires torch and mace-torch. Install with: pip install \"orca-mlips[mace]\""
             ) from exc
 
         self._torch = torch
