@@ -28,6 +28,7 @@ huggingface-cli login
 ```
 
 4. Use in an ORCA input file. If you use ORB/MACE, use `ProgExt "orb"`/`ProgExt "mace"`.
+For detailed ORCA External Tool / `ExtOpt` usage, see https://www.faccts.de/docs/orca/6.1/tutorials/workflows/extopt.html
 ```text
 ! ExtOpt Opt
 
@@ -197,5 +198,6 @@ If you use this package, please cite:
 
 ## References
 
+- ORCA ExtTool official tutorial (ExtOpt workflow): https://www.faccts.de/docs/orca/6.1/tutorials/workflows/extopt.html
 - ORCA ExtTool: https://www.faccts.de/docs/orca/6.1/manual/contents/essentialelements/externaloptimizer.html
 - ORCA external tools: https://github.com/faccts/orca-external-tools
