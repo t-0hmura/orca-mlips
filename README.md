@@ -188,8 +188,6 @@ If you use this package, please cite:
   title        = {orca-mlips},
   year         = {2026},
   month        = {2},
-  version      = {0.0.1},
-  date-released= {2026-02-19},
   url          = {https://github.com/t-0hmura/orca-mlips},
   license      = {MIT}
 }
