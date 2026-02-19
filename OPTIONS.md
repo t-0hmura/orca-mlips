@@ -2,7 +2,7 @@
 
 For most users, defaults are sufficient.
 
-> **Note:** UMA and MACE currently conflict at dependency level (`e3nn`). Use separate environments.
+> **Note:** UMA and MACE currently have a dependency conflict (`e3nn`). Use separate environments.
 
 ## Common Options (all backends)
 
@@ -70,7 +70,7 @@ Available models (default: **`MACE-OMOL-0`**):
 | `off:small`, `off:medium`, `off:large` | MACE-OFF23 for organic molecules |
 | `anicc` | ANI-CC model |
 
-The `mp:` prefix selects Materials Project models, `off:` selects organic force field models. A local file path or URL can also be passed. Run `mace --list-models` to see the full list. Models are downloaded automatically on first use.
+The `mp:` prefix selects Materials Project models, `off:` selects organic force field models. A local file path or URL can also be specified. Run `mace --list-models` to see the full list. Models are downloaded automatically on first use.
 
 - `--dtype float32|float64` (default: `float64`)
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for MACE calculator.

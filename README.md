@@ -101,7 +101,7 @@ end
 ...
 *
 ```
-A single-iteration optimization that triggers the ExtTool call and writes the analytical Hessian in ORCA `.hess` format. `! ExtOpt` is required to make ORCA use the external tool instead of its own internal methods. The job may exit non-zero (not converged), but the `.hess` file is created.
+A single-iteration optimization that triggers the ExtTool call and writes the analytical Hessian in ORCA `.hess` format. `! ExtOpt` is required to make ORCA use the external tool instead of its own internal methods. The job may exit with a non-zero status (not converged), but the `.hess` file is created.
 
 **Step 2: TS optimization reading Hessian**
 ```text
@@ -163,7 +163,7 @@ pip install "orca-mlips[orb,mace,aimnet2]"  # ORB + MACE + AIMNet2
 pip install orca-mlips                # core only
 ```
 
-> **Note:** UMA and MACE conflict at dependency level (`e3nn`). Use separate environments.
+> **Note:** UMA and MACE have a dependency conflict (`e3nn`). Use separate environments.
 
 Local install:
 ```bash
