@@ -178,6 +178,23 @@ Command aliases:
 - **UMA model download fails (401/403)** — Run `huggingface-cli login`. Some models require access approval on Hugging Face.
 - **Works interactively but fails in PBS jobs** — Use absolute path from `which uma` in the ORCA input.
 
+## Citation
+
+If you use this package, please cite:
+
+```bibtex
+@software{ohmura2026orcamlips,
+  author       = {Ohmura, Takuto},
+  title        = {orca-mlips},
+  year         = {2026},
+  month        = {2},
+  version      = {0.0.1},
+  date-released= {2026-02-19},
+  url          = {https://github.com/t-0hmura/orca-mlips},
+  license      = {MIT}
+}
+```
+
 ## References
 
 - ORCA ExtTool: https://www.faccts.de/docs/orca/6.1/manual/contents/essentialelements/externaloptimizer.html
