@@ -241,7 +241,7 @@ If you use this package, please cite:
   title        = {orca-mlips},
   year         = {2026},
   month        = {2},
-  version      = {1.0.0},
+  version      = {1.1.0},
   url          = {https://github.com/t-0hmura/orca-mlips},
   license      = {MIT},
   doi          = {10.5281/zenodo.18695270}
