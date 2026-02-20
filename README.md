@@ -10,7 +10,9 @@ Four model families are currently supported:
 - **MACE** ([mace](https://github.com/ACEsuit/mace)) — default model: `MACE-OMOL-0`
 - **AIMNet2** ([aimnetcentral](https://github.com/isayevlab/aimnetcentral)) — default model: `aimnet2`
 
-All backends provide energy and gradient, and can output an **analytical Hessian** in **ORCA** `.hess` format via `--dump-hessian`.  
+All backends provide energy and gradient, and can output an **analytical Hessian** in **ORCA** `.hess` format via `--dump-hessian`.
+An optional implicit-solvent correction (`xTB/ALPB`) is also available via
+`--solvent`, using an ALPB-vacuum delta term.
 
 > The model server starts automatically and stays resident in memory, so repeated calls during optimization are fast.
 
@@ -68,9 +70,37 @@ end
 end
 ```
 
+## Implicit Solvent Correction (xTB/ALPB)
+
+Use `--solvent <name>` through `Ext_Params`:
+
+```text
+%method
+  ProgExt "uma"
+  Ext_Params "--solvent water"
+end
+```
+
+With Hessian dump:
+
+```text
+Ext_Params "--solvent water --dump-hessian cla_solv.hess"
+```
+
+`--solvent none` disables the correction and is fully backward-compatible.
+
+Details:
+- User guide: `SOLVENT_EFFECTS.md`
+- Implementation details: `TECHNICAL_NOTE.md`
+
+Recommended workflow:
+1. Optimize geometry with MLIP (`--solvent` enabled if needed).
+2. Run DFT single-point at the optimized geometry.
+3. Use MLIP frequency thermochemistry corrections (with solvent delta if used) with the DFT single-point energy.
+
 > **Note:** Run `uma --list-models` to see available models. If the `uma` alias conflicts in your environment, use `orca-mlips-uma` instead.
 
-Additional examples: `examples/cla_hess_uma.inp` + `examples/cla_uma.inp`, `examples/sn2_hess_orb.inp` + `examples/sn2_orb.inp`, `examples/water_hess_mace.inp` + `examples/water_mace.inp`, `examples/cla_hess_aimnet2.inp` + `examples/cla_aimnet2.inp`
+Additional examples: `examples/cla_hess_uma.inp` + `examples/cla_uma.inp`, `examples/sn2_hess_orb.inp` + `examples/sn2_orb.inp`, `examples/water_hess_mace.inp` + `examples/water_mace.inp`, `examples/cla_hess_aimnet2.inp` + `examples/cla_aimnet2.inp`, solvent examples `examples/cla_hess_solv_uma.inp` + `examples/cla_solv_uma.inp`
 
 ## Using Analytical Hessian (optional two-step workflow)
 
@@ -186,6 +216,7 @@ Model download notes:
 ## Advanced Options
 
 See `OPTIONS.md` for backend-specific tuning parameters.
+For solvent correction options, see `SOLVENT_EFFECTS.md`.
 
 Command aliases:
 - Short: `uma`, `orb`, `mace`, `aimnet2`

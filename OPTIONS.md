@@ -8,9 +8,16 @@ For most users, defaults are sufficient.
 
 - `--model <name_or_alias_or_path>`
 - `--device auto|cpu|cuda`
+- `--solvent <name|none>` — xTB ALPB solvent correction (`none` disables correction).
+- `--xtb-cmd <path_or_cmd>` — xTB executable for solvent correction (default: `xtb`).
+- `--xtb-acc <float>` — xTB `--acc` value for solvent correction (default: `0.2`).
+- `--xtb-workdir <tmp|path>` — xTB per-call scratch base directory (default: `tmp`).
+- `--xtb-keep-files` — Keep xTB temporary files for debugging.
 - `--dump-hessian <path>` — Dump analytical Hessian in ORCA `.hess` format (load with `InHessName`).
 - `--list-models`
 - `--version`
+
+When solvent correction is enabled (`--solvent != none`), xTB must be available in the current environment/path.
 
 ## UMA Options (`uma` / `orca-mlips-uma`)
 
