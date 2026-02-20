@@ -37,18 +37,38 @@ This keeps the MLIP model in vacuum mode and adds only solvent-origin terms.
 
 ## CPCM-X Setup
 
-CPCM-X installation is done by cloning the repository from
-`grimme-lab/CPCM-X` and setting `CPXHOME` to that directory.
-Place parameter and COSMO file databases under that setup, and use the
-command-line workflow as recommended by CPCM-X.
+CPCM-X requires xTB to be built from source with CPCM-X linked in.
+The conda-forge `xtb` package does not include CPCM-X support.
+
+**Step 1: Build xTB with `-DWITH_CPCMX=ON`**
+
+CPCM-X is bundled in the xTB source tree (`subprojects/cpx.wrap`) and is fetched automatically during the CMake configure step. Requires GCC >= 10 (gfortran 8 causes internal compiler errors).
 
 ```bash
-git clone git@github.com:grimme-lab/CPCM-X.git
-cd CPCM-X
-export CPXHOME="$PWD"
+git clone --depth 1 https://github.com/grimme-lab/xtb.git
+cd xtb
+cmake -B build -S . \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DWITH_CPCMX=ON \
+  -DBLAS_LIBRARIES=/path/to/libblas.so \
+  -DLAPACK_LIBRARIES=/path/to/liblapack.so
+make -C build tblite-lib -j8   # build tblite first to avoid a parallel build race
+make -C build xtb-exe -j8
 ```
 
-For full installation/build details, see:
+**Step 2: Use the custom xTB via `--xtb-cmd`**
+
+```text
+%method
+  ProgExt "uma"
+  Ext_Params "--solvent water --solvent-model cpcmx --xtb-cmd /path/to/xtb"
+end
+```
+
+`CPXHOME` must be set at runtime to point to the CPCM-X source directory (containing `DB/`). When xTB fetches CPCM-X during build, the source is placed under `build/_deps/cpcmx-src/`.
+
+For full details, see:
+- https://github.com/grimme-lab/xtb
 - https://github.com/grimme-lab/CPCM-X
 
 ## ORCA Usage
@@ -87,16 +107,16 @@ end
 ## Performance Notes
 
 - Solvent correction runs two xTB calculations per geometry point (vacuum + solvated state).
-- Hessian correction is expensive: each state needs xTB Hessian.
+- Hessian correction is expensive: each state needs an xTB Hessian.
 - Use `--dump-hessian` only at required points in the workflow.
 
 ## Troubleshooting
 
 - `xTB command not found`:
-  - install xTB in the active environment
-  - or set `--xtb-cmd /full/path/to/xtb`
+  - Install xTB in the active environment.
+  - Or set `--xtb-cmd /full/path/to/xtb`.
 - `xTB solvent correction failed`:
-  - verify solvent spelling (`water`, `thf`, `toluene`, ...)
-  - for `--solvent-model cpcmx`, use an xTB build with CPCM-X support
-    (see https://github.com/grimme-lab/CPCM-X)
-  - rerun with `--xtb-keep-files --xtb-workdir <path>` and inspect files
+  - Verify the solvent spelling (`water`, `thf`, `toluene`, ...).
+  - For `--solvent-model cpcmx`, use an xTB build with CPCM-X support
+    (see https://github.com/grimme-lab/CPCM-X).
+  - Rerun with `--xtb-keep-files --xtb-workdir <path>` and inspect the files.

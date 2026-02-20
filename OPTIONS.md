@@ -29,7 +29,7 @@ Available models (default: **`uma-s-1p1`**):
 | Model | Description |
 |-------|-------------|
 | `uma-s-1p1` | Small model, fastest while still SOTA on most benchmarks (6.6M/150M active/total params) |
-| `uma-m-1p1` | Best across all metrics, slower and more memory intensive (50M/1.4B active/total params) |
+| `uma-m-1p1` | Best across all metrics, slower and more memory-intensive (50M/1.4B active/total params) |
 
 Run `uma --list-models` to see the full list including `esen-*` variants. Models are hosted on Hugging Face Hub (`huggingface-cli login` required).
 

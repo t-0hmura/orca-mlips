@@ -39,22 +39,22 @@ The shared backend implementation is in `plugins/mlip_backends.py`.
 
 ### UMA / ORB
 
-UMA/ORB analytical Hessians are computed by autograd on energy with model-state
+UMA/ORB analytical Hessians are computed via autograd on the energy with model-state
 management to avoid graph/dropout issues:
 
 1. `_prepare_model_for_autograd_hessian(...)`
-2. compute Hessian with `torch.autograd.functional.hessian(...)`
+2. compute the Hessian with `torch.autograd.functional.hessian(...)`
 3. `_restore_model_after_autograd_hessian(...)`
 
 Key points:
 
-- model is switched to train mode for reliable autograd graph construction
-- dropout modules are effectively disabled (`p=0`, eval behavior)
-- original training/dropout/`requires_grad` states are restored after Hessian
+- The model is switched to train mode for reliable autograd graph construction.
+- Dropout modules are effectively disabled (`p=0`, eval behavior).
+- Original training/dropout/`requires_grad` states are restored after Hessian computation.
 
 ### MACE
 
-Uses calculator-native Hessian path (`get_hessian`) when available.
+Uses the calculator-native Hessian path (`get_hessian`) when available.
 
 ### AIMNet2
 
@@ -64,8 +64,8 @@ Requests Hessian from AIMNet2 calculator outputs and reshapes to `(3N, 3N)`.
 
 `runner_orca.py` flow:
 
-1. read ORCA extinp (`symbols`, `coords`, charge/multiplicity, gradient flag)
-2. evaluate MLIP backend
+1. read the ORCA extinp (`symbols`, `coords`, charge/multiplicity, gradient flag)
+2. evaluate the MLIP backend
 3. if `--solvent != none`, evaluate xTB delta and add `dE/dF/dH`
 4. write `.engrad` and optional `.hess` (`--dump-hessian`)
 
@@ -73,4 +73,4 @@ Available solvent models:
 - `--solvent-model alpb` -> xTB `--alpb`
 - `--solvent-model cpcmx` -> xTB `--cpcmx`
 
-For `--dump-hessian`, solvent-corrected Hessian is mandatory and enforced.
+For `--dump-hessian`, the solvent-corrected Hessian is mandatory and enforced.

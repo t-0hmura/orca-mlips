@@ -24,7 +24,7 @@ Requires **Python 3.9** or later.
 pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
 ```
 
-2. Install the package with UMA profile. If you need ORB/MACE/AIMNet2, use `orca-mlips[orb]`/`orca-mlips[mace]`/`orca-mlips[aimnet2]`.
+2. Install the package with the UMA profile. If you need ORB/MACE/AIMNet2, use `orca-mlips[orb]`/`orca-mlips[mace]`/`orca-mlips[aimnet2]`.
 ```bash
 pip install "orca-mlips[uma]"
 ```
@@ -71,6 +71,8 @@ end
 
 ## Implicit Solvent Correction (xTB)
 
+You can use an implicit-solvent correction via xTB. To use it, install xTB and pass the `--solvent` option.
+
 Install xTB in your conda environment (easy path):
 
 ```bash
@@ -90,6 +92,14 @@ end
   Ext_Params "--solvent thf"
 end
 ```
+
+This implementation follows the solvent-correction approach described in:
+Zhang, C., Leforestier, B., Besnard, C., & Mazet, C. (2025). Pd-catalyzed regiodivergent arylation of cyclic allylboronates. Chemical Science, 16, 22656-22665. https://doi.org/10.1039/d5sc07577g
+
+When you describe this correction in a paper, you can use:
+`Implicit solvent effects were accounted for by integrating the ALPB [or CPCM-X] solvation model from the xtb package as an additional correction to UMA-generated energies, gradients, and Hessians.`
+
+**Note:** `--solvent-model cpcmx` (CPCM-X) requires xTB built from source with `-DWITH_CPCMX=ON`. The conda-forge `xtb` package does not include CPCM-X support. See `SOLVENT_EFFECTS.md` for build instructions.
 
 For details, see `SOLVENT_EFFECTS.md`.
 
@@ -122,7 +132,7 @@ end
 ...
 *
 ```
-A single-iteration optimization that triggers the ExtTool call and writes the analytical Hessian in ORCA `.hess` format. `! ExtOpt` is required to make ORCA use the external tool instead of its own internal methods. The job may exit with a non-zero status (not converged), but the `.hess` file is created.
+This runs a single-iteration optimization that triggers the ExtTool call and writes the analytical Hessian in ORCA `.hess` format. `! ExtOpt` is required to make ORCA use the external tool instead of its own internal methods. The job may exit with a non-zero status (not converged), but the `.hess` file is created.
 
 **Step 2: TS optimization reading Hessian**
 ```text
