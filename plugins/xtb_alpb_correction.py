@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""xTB(ALPB) solvent-only delta correction helpers.
+"""xTB implicit-solvent delta correction helpers.
 
 The correction adds only solvent contributions by subtracting xTB vacuum terms
-from xTB ALPB terms on the same geometry:
-    dE = E(ALPB) - E(vac)
-    dF = F(ALPB) - F(vac)
-    dH = H(ALPB) - H(vac)
+from xTB implicit-solvent terms on the same geometry:
+    dE = E(solv) - E(vac)
+    dF = F(solv) - F(vac)
+    dH = H(solv) - H(vac)
 """
 
 from __future__ import absolute_import, division, print_function
@@ -28,16 +28,34 @@ _TOTAL_ENERGY_RE = re.compile(
     r"TOTAL ENERGY\s+([-+]?(?:\d+\.\d*|\d*\.\d+|\d+)(?:[DdEe][-+]?\d+)?)"
 )
 _INT_TOKEN_RE = re.compile(r"^[+-]?\d+$")
+_SOLVENT_MODEL_TO_XTB_FLAG = {
+    "alpb": "--alpb",
+    "cpcmx": "--cpcmx",
+}
 
 
 class XTBError(RuntimeError):
-    """Raised for xTB ALPB correction failures."""
+    """Raised for xTB implicit-solvent correction failures."""
 
 
 def normalize_solvent_name(solvent):
     text = "" if solvent is None else str(solvent).strip()
     if (not text) or (text.lower() in ("none", "vac", "vacuum")):
         return "none"
+    return text
+
+
+def normalize_solvent_model(model):
+    text = "" if model is None else str(model).strip().lower()
+    if not text:
+        return "alpb"
+    if text not in _SOLVENT_MODEL_TO_XTB_FLAG:
+        raise XTBError(
+            "Unsupported --solvent-model '{}'. Choose from: {}.".format(
+                model,
+                ", ".join(sorted(_SOLVENT_MODEL_TO_XTB_FLAG.keys())),
+            )
+        )
     return text
 
 
@@ -147,6 +165,7 @@ def _build_xtb_cmd(
     charge,
     multiplicity,
     solvent,
+    solvent_model,
     xtb_acc,
     mode,
 ):
@@ -171,7 +190,8 @@ def _build_xtb_cmd(
 
     solvent_name = normalize_solvent_name(solvent)
     if solvent_name != "none":
-        cmd.extend(["--alpb", solvent_name])
+        model_name = normalize_solvent_model(solvent_model)
+        cmd.extend([_SOLVENT_MODEL_TO_XTB_FLAG[model_name], solvent_name])
 
     if charge is not None:
         cmd.extend(["--chrg", str(int(charge))])
@@ -187,6 +207,7 @@ def _run_xtb(
     charge,
     multiplicity,
     solvent,
+    solvent_model,
     xtb_cmd,
     xtb_acc,
     mode,
@@ -198,6 +219,7 @@ def _run_xtb(
         charge=charge,
         multiplicity=multiplicity,
         solvent=solvent,
+        solvent_model=solvent_model,
         xtb_acc=xtb_acc,
         mode=mode,
     )
@@ -225,8 +247,9 @@ def _run_xtb(
         out_tail = "\n".join((proc.stdout or "").splitlines()[-20:])
         err_tail = "\n".join((proc.stderr or "").splitlines()[-20:])
         raise XTBError(
-            "xTB failed (mode={}, solvent={}) rc={}.\nCMD: {}\nSTDOUT:\n{}\nSTDERR:\n{}".format(
+            "xTB failed (mode={}, solvent_model={}, solvent={}) rc={}.\nCMD: {}\nSTDOUT:\n{}\nSTDERR:\n{}".format(
                 mode,
+                normalize_solvent_model(solvent_model),
                 normalize_solvent_name(solvent),
                 proc.returncode,
                 " ".join(cmd),
@@ -441,6 +464,7 @@ def xtb_energy(
     charge,
     multiplicity,
     solvent=None,
+    solvent_model="alpb",
     xtb_cmd="xtb",
     xtb_acc=0.2,
     xtb_workdir="tmp",
@@ -457,6 +481,7 @@ def xtb_energy(
             charge=charge,
             multiplicity=multiplicity,
             solvent=solvent,
+            solvent_model=solvent_model,
             xtb_cmd=xtb_cmd,
             xtb_acc=xtb_acc,
             mode="sp",
@@ -478,6 +503,7 @@ def xtb_engrad(
     charge,
     multiplicity,
     solvent=None,
+    solvent_model="alpb",
     xtb_cmd="xtb",
     xtb_acc=0.2,
     xtb_workdir="tmp",
@@ -495,6 +521,7 @@ def xtb_engrad(
             charge=charge,
             multiplicity=multiplicity,
             solvent=solvent,
+            solvent_model=solvent_model,
             xtb_cmd=xtb_cmd,
             xtb_acc=xtb_acc,
             mode="grad",
@@ -520,6 +547,7 @@ def xtb_hessian(
     charge,
     multiplicity,
     solvent=None,
+    solvent_model="alpb",
     xtb_cmd="xtb",
     xtb_acc=0.2,
     xtb_workdir="tmp",
@@ -536,6 +564,7 @@ def xtb_hessian(
             charge=charge,
             multiplicity=multiplicity,
             solvent=solvent,
+            solvent_model=solvent_model,
             xtb_cmd=xtb_cmd,
             xtb_acc=xtb_acc,
             mode="hess",
@@ -560,13 +589,14 @@ def delta_alpb_minus_vac(
     solvent,
     need_forces,
     need_hessian,
+    solvent_model="alpb",
     xtb_cmd="xtb",
     xtb_acc=0.2,
     xtb_workdir="tmp",
     xtb_keep_files=False,
     ncores=1,
 ):
-    """Return (dE, dF, dH) where dX = X(ALPB) - X(vacuum) in MLIP units."""
+    """Return (dE, dF, dH) where dX = X(solv) - X(vacuum) in MLIP units."""
     solvent_name = normalize_solvent_name(solvent)
     nat = len(symbols)
     if solvent_name == "none":
@@ -574,12 +604,15 @@ def delta_alpb_minus_vac(
         zero_hessian = np.zeros((3 * nat, 3 * nat), dtype=np.float64) if need_hessian else None
         return 0.0, zero_forces, zero_hessian
 
+    model_name = normalize_solvent_model(solvent_model)
+
     ncores = resolve_xtb_ncores(ncores)
     common_kwargs = dict(
         symbols=symbols,
         coords_ang=coords_ang,
         charge=charge,
         multiplicity=multiplicity,
+        solvent_model=model_name,
         xtb_cmd=xtb_cmd,
         xtb_acc=xtb_acc,
         xtb_workdir=xtb_workdir,

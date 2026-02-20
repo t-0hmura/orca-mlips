@@ -8,7 +8,10 @@ For most users, defaults are sufficient.
 
 - `--model <name_or_alias_or_path>`
 - `--device auto|cpu|cuda`
-- `--solvent <name|none>` — xTB ALPB solvent correction (`none` disables correction).
+- `--solvent <name|none>` — xTB implicit-solvent correction (`none` disables correction).
+- `--solvent-model <alpb|cpcmx>` — implicit solvent model (default: `alpb`).
+  - `alpb` -> xTB `--alpb`
+  - `cpcmx` -> xTB `--cpcmx`
 - `--xtb-cmd <path_or_cmd>` — xTB executable for solvent correction (default: `xtb`).
 - `--xtb-acc <float>` — xTB `--acc` value for solvent correction (default: `0.2`).
 - `--xtb-workdir <tmp|path>` — xTB per-call scratch base directory (default: `tmp`).
