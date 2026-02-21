@@ -99,7 +99,7 @@ Zhang, C., Leforestier, B., Besnard, C., & Mazet, C. (2025). Pd-catalyzed regiod
 If citing this correction in a paper, you can use the following:
 `Implicit solvent effects were accounted for by integrating the ALPB [or CPCM-X] solvation model from the xtb package as an additional correction to UMA-generated energies, gradients, and Hessians.`
 
-**Note:** `--solvent-model cpcmx` (CPCM-X) requires xTB built from source with `-DWITH_CPCMX=ON`. The conda-forge `xtb` package does not include CPCM-X support. See [`SOLVENT_EFFECTS.md`](SOLVENT_EFFECTS.md) for build instructions.
+> **Note:** `--solvent-model cpcmx` (CPCM-X) requires xTB built from source with `-DWITH_CPCMX=ON`. The conda-forge `xtb` package does not include CPCM-X support. See [`SOLVENT_EFFECTS.md`](SOLVENT_EFFECTS.md) for build instructions.
 
 For details, see [`SOLVENT_EFFECTS.md`](SOLVENT_EFFECTS.md).
 
