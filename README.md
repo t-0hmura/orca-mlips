@@ -71,9 +71,9 @@ end
 
 ## Implicit Solvent Correction (xTB)
 
-You can use an implicit-solvent correction via xTB. To use it, install xTB and pass the `--solvent` option.
+You can use an implicit-solvent correction via xTB. To use it, install xTB and pass the `--solvent` option to `Ext_Params`.
 
-Install xTB in your conda environment (easy path):
+Install xTB in your conda environment (or built from source):
 
 ```bash
 conda install xtb
