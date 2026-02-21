@@ -11,7 +11,7 @@ Four model families are currently supported:
 - **AIMNet2** ([aimnetcentral](https://github.com/isayevlab/aimnetcentral)) — default model: `aimnet2`
 
 All backends provide energy and gradient, and can output an **analytical Hessian** in **ORCA** `.hess` format via `--dump-hessian`.
-An optional implicit-solvent correction (`xTB`) is also available via `--solvent`.
+An optional **implicit-solvent** correction (`xTB`) is also available via `--solvent`.
 
 > The model server starts automatically and stays resident in memory, so repeated calls during optimization are fast.
 
