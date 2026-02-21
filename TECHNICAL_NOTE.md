@@ -58,7 +58,7 @@ Uses the calculator-native Hessian path (`get_hessian`) when available.
 
 ### AIMNet2
 
-Requests Hessian from AIMNet2 calculator outputs and reshapes to `(3N, 3N)`.
+Requests the Hessian from AIMNet2 calculator outputs and reshapes to `(3N, 3N)`.
 
 ## ORCA ExtTool Integration
 
@@ -73,4 +73,4 @@ Available solvent models:
 - `--solvent-model alpb` -> xTB `--alpb`
 - `--solvent-model cpcmx` -> xTB `--cpcmx`
 
-For `--dump-hessian`, the solvent-corrected Hessian is mandatory and enforced.
+For `--dump-hessian`, the solvent-corrected Hessian is required.
