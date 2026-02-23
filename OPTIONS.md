@@ -97,7 +97,7 @@ Available models (default: **`aimnet2`**):
 | `aimnet2nse` | AIMNet2 open-shell model |
 | `aimnet2pd` | AIMNet2 for Pd-containing systems |
 | `<local_model_path>` | Local checkpoint file path |
-| `<https://...model>` | Model URL |
+| `<https://example.com/path/to/model.pt>` | Model URL |
 
 - `--calc-opt KEY=VALUE` (repeatable) — Extra kwargs for AIMNet2 calculator.
 

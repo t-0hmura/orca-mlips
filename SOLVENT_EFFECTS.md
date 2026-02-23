@@ -3,26 +3,26 @@
 `orca-mlips` supports an implicit-solvent correction that adds only solvent
 contributions to MLIP vacuum predictions.
 
-## What Is Added
+## Solvent Delta Terms Added to MLIP Outputs
 
 For each geometry `R`, the plugin evaluates xTB twice:
 
 - vacuum
 - implicit solvent (`--solvent <name>`, model selected by `--solvent-model`)
 
-Then it builds:
+The solvent delta terms are defined as:
 
 - `dE(R) = E_xTB(solv) - E_xTB(vac)`
 - `dF(R) = F_xTB(solv) - F_xTB(vac)`
 - `dH(R) = H_xTB(solv) - H_xTB(vac)`
 
-and returns:
+The plugin then returns:
 
 - `E_total = E_MLIP(vac) + dE`
 - `F_total = F_MLIP(vac) + dF`
 - `H_total = H_MLIP(vac) + dH`
 
-This keeps the MLIP model in vacuum mode and adds only solvent-origin terms.
+This keeps the MLIP model in vacuum mode and adds only solvent-induced correction terms.
 
 ## CLI Options
 

@@ -19,7 +19,7 @@ This is implemented in `plugins/runner_orca.py` through
 
 ## Units
 
-xTB parsed units:
+Units parsed from xTB output:
 
 - energy: `Eh`
 - gradient: `Eh/Bohr`
@@ -33,7 +33,7 @@ Converted to MLIP units before addition:
 
 Force conversion uses `F = -grad`.
 
-## Hessian Path Per Backend
+## Backend-Specific Hessian Paths
 
 The shared backend implementation is in `plugins/mlip_backends.py`.
 
@@ -42,9 +42,9 @@ The shared backend implementation is in `plugins/mlip_backends.py`.
 UMA/ORB analytical Hessians are computed via autograd on the energy with model-state
 management to avoid graph/dropout issues:
 
-1. `_prepare_model_for_autograd_hessian(...)`
-2. compute the Hessian with `torch.autograd.functional.hessian(...)`
-3. `_restore_model_after_autograd_hessian(...)`
+1. Call `_prepare_model_for_autograd_hessian(...)`.
+2. Compute the Hessian with `torch.autograd.functional.hessian(...)`.
+3. Call `_restore_model_after_autograd_hessian(...)`.
 
 Key points:
 
