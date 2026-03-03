@@ -10,6 +10,7 @@ from xTB implicit-solvent terms on the same geometry:
 
 from __future__ import absolute_import, division, print_function
 
+import concurrent.futures
 import os
 import re
 import shlex
@@ -63,7 +64,7 @@ def solvent_correction_enabled(solvent):
     return normalize_solvent_name(solvent) != "none"
 
 
-def resolve_xtb_ncores(explicit_ncores=None, fallback=1):
+def resolve_xtb_ncores(explicit_ncores=None, fallback=4):
     candidates = []
     if explicit_ncores is not None:
         candidates.append(explicit_ncores)
@@ -594,7 +595,7 @@ def delta_alpb_minus_vac(
     xtb_acc=0.2,
     xtb_workdir="tmp",
     xtb_keep_files=False,
-    ncores=1,
+    ncores=4,
 ):
     """Return (dE, dF, dH) where dX = X(solv) - X(vacuum) in MLIP units."""
     solvent_name = normalize_solvent_name(solvent)
@@ -621,19 +622,28 @@ def delta_alpb_minus_vac(
     )
 
     if need_forces or need_hessian:
-        vac_e, vac_f = xtb_engrad(solvent="none", **common_kwargs)
-        sol_e, sol_f = xtb_engrad(solvent=solvent_name, **common_kwargs)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            fut_vac = pool.submit(xtb_engrad, solvent="none", **common_kwargs)
+            fut_sol = pool.submit(xtb_engrad, solvent=solvent_name, **common_kwargs)
+            vac_e, vac_f = fut_vac.result()
+            sol_e, sol_f = fut_sol.result()
     else:
-        vac_e = xtb_energy(solvent="none", **common_kwargs)
-        sol_e = xtb_energy(solvent=solvent_name, **common_kwargs)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            fut_vac = pool.submit(xtb_energy, solvent="none", **common_kwargs)
+            fut_sol = pool.submit(xtb_energy, solvent=solvent_name, **common_kwargs)
+            vac_e = fut_vac.result()
+            sol_e = fut_sol.result()
         vac_f = None
         sol_f = None
 
     vac_h = None
     sol_h = None
     if need_hessian:
-        vac_h = xtb_hessian(solvent="none", **common_kwargs)
-        sol_h = xtb_hessian(solvent=solvent_name, **common_kwargs)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            fut_vac = pool.submit(xtb_hessian, solvent="none", **common_kwargs)
+            fut_sol = pool.submit(xtb_hessian, solvent=solvent_name, **common_kwargs)
+            vac_h = fut_vac.result()
+            sol_h = fut_sol.result()
 
     de_ev = float(sol_e - vac_e)
 
