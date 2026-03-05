@@ -35,6 +35,7 @@ pip install "orca-mlips[uma]"
 ```bash
 huggingface-cli login
 ```
+> UMA model is on Hugging Face Hub. You need to log in once (See https://github.com/facebookresearch/fairchem):
 
 4. Use in an ORCA input file. If you use ORB/MACE/AIMNet2, use `ProgExt "orb"`/`ProgExt "mace"`/`ProgExt "aimnet2"`.
 For detailed ORCA External Tool / `ExtOpt` usage, see https://www.faccts.de/docs/orca/6.1/tutorials/workflows/extopt.html
