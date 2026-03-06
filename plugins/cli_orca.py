@@ -167,7 +167,7 @@ def _aimnet2_make_evaluator(args):
 
 _BACKEND_CONFIG = {
     "uma": {
-        "default_model": "uma-s-1p1",
+        "default_model": "uma-s-1p2",
         "add_args": _uma_add_args,
         "make_evaluator": _uma_make_evaluator,
         "available_models": get_available_uma_models,

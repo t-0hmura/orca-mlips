@@ -33,8 +33,8 @@ GRAD_HA_BOHR_PER_FORCE_EV_ANG = -HARTREE_PER_EV / BOHR_PER_ANG
 HESS_HA_BOHR2_PER_EV_ANG2 = HARTREE_PER_EV / (BOHR_PER_ANG * BOHR_PER_ANG)
 
 FAIRCHEM_MODELS_FALLBACK = [
-    "uma-s-1",
     "uma-s-1p1",
+    "uma-s-1p2",
     "uma-m-1p1",
     "esen-md-direct-all-omol",
     "esen-sm-conserving-all-omol",

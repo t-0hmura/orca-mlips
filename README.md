@@ -5,7 +5,7 @@
 MLIP (Machine Learning Interatomic Potential) plugins for ORCA `ExtTool` (`ProgExt`) interface.
 
 Four model families are currently supported:
-- **UMA** ([fairchem](https://github.com/facebookresearch/fairchem)) — default model: `uma-s-1p1`
+- **UMA** ([fairchem](https://github.com/facebookresearch/fairchem)) — default model: `uma-s-1p2`
 - **ORB** ([orb-models](https://github.com/orbital-materials/orb-models)) — default model: `orb_v3_conservative_omol`
 - **MACE** ([mace](https://github.com/ACEsuit/mace)) — default model: `MACE-OMOL-0`
 - **AIMNet2** ([aimnetcentral](https://github.com/isayevlab/aimnetcentral)) — default model: `aimnet2`
