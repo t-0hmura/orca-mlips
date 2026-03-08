@@ -24,7 +24,7 @@ When solvent correction is enabled (`--solvent != none`), xTB must be available 
 
 ## UMA Options (`uma` / `orca-mlips-uma`)
 
-Available models (default: **`uma-s-1p2`**):
+Available models (default: **`uma-s-1p1`**):
 
 | Model | Description |
 |-------|-------------|
