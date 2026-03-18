@@ -148,14 +148,11 @@ class MLIPServer(object):
         try:
             while self._running:
                 if self.parent_pid is not None and not _pid_is_alive(self.parent_pid):
-                    print(
-                        "[mlip-server] Parent process {} exited, shutting down.".format(
-                            self.parent_pid
-                        ),
-                        file=sys.stderr,
-                        flush=True,
-                    )
-                    break
+                    # When called via ORCA ExtTool, each evaluation spawns a
+                    # short-lived child process whose pid changes every call.
+                    # Do NOT shut down on parent exit; rely on idle_timeout
+                    # instead so the server persists across evaluations.
+                    pass
 
                 # Idle timeout check
                 if time.time() - self._last_activity > self.idle_timeout:
@@ -363,7 +360,12 @@ def client_evaluate(
 
 
 def auto_server_socket(args, parent_pid=None):
-    """Compute a deterministic socket path from evaluator arguments."""
+    """Compute a deterministic socket path from evaluator arguments.
+
+    The socket key is based on model config + working directory (not ppid),
+    so that repeated ExtTool calls from the same ORCA job reuse the same
+    server even though each call is a separate child process.
+    """
     key_parts = [str(getattr(args, "model", "default"))]
     if hasattr(args, "device"):
         key_parts.append(str(args.device))
@@ -371,9 +373,7 @@ def auto_server_socket(args, parent_pid=None):
         key_parts.append(str(args.task))
     if hasattr(args, "precision"):
         key_parts.append(str(args.precision))
-    if parent_pid is None:
-        parent_pid = os.getppid()
-    key_parts.append("ppid={}".format(int(parent_pid)))
+    key_parts.append("cwd={}".format(os.getcwd()))
 
     key = "_".join(key_parts)
     h = hashlib.md5(key.encode()).hexdigest()[:12]
