@@ -460,6 +460,20 @@ def run_orca_plugin(
         gradient_ha_bohr=grad_ha_bohr,
     )
 
+    # Generate .hostnames file for ORCA parallel NumFreq.
+    # ORCA ExtOpt does not create this file automatically, causing
+    # "Cannot open <basename>.hostnames" when nprocs > 1 + NumFreq.
+    _extinp_path = args.extinp
+    _base = _extinp_path.replace("_EXT.extinp.tmp", "")
+    _hostnames_path = _base + ".hostnames"
+    if not os.path.exists(_hostnames_path):
+        import socket as _sock_mod
+        _hn = _sock_mod.gethostname()
+        with open(_hostnames_path, "w") as _hf:
+            for _ in range(32):
+                _hf.write(_hn + "\n")
+            _hf.write("\n")
+
     if args.dump_hessian:
         if hessian_ev_ang2 is None:
             raise RunnerError("Hessian dump was requested but backend returned no Hessian.")

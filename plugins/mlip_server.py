@@ -373,7 +373,10 @@ def auto_server_socket(args, parent_pid=None):
         key_parts.append(str(args.task))
     if hasattr(args, "precision"):
         key_parts.append(str(args.precision))
-    key_parts.append("cwd={}".format(os.getcwd()))
+    # Use MLIP_SERVER_KEY env var if set (allows sharing server across directories),
+    # otherwise fall back to CWD (each directory gets its own server).
+    server_key = os.environ.get("MLIP_SERVER_KEY", os.getcwd())
+    key_parts.append("key={}".format(server_key))
 
     key = "_".join(key_parts)
     h = hashlib.md5(key.encode()).hexdigest()[:12]
