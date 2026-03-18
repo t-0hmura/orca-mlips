@@ -1,7 +1,7 @@
 ! ExtOpt OptTS
 
 %pal
-  nprocs 8
+  nprocs 1
 end
 
 %method
