@@ -450,7 +450,7 @@ def ensure_server(
         )
         return False
 
-    startup_timeout = int(os.environ.get("MLIP_SERVER_STARTUP_TIMEOUT", "900"))
+    startup_timeout = 300
     waited = 0
     while waited < startup_timeout:
         if proc.poll() is not None:
