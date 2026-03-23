@@ -95,7 +95,7 @@ def _recv_msg(sock):
 class MLIPServer(object):
     """Single-threaded Unix domain socket server wrapping an evaluator."""
 
-    def __init__(self, evaluator, socket_path, idle_timeout=600, parent_pid=None):
+    def __init__(self, evaluator, socket_path, idle_timeout=1500, parent_pid=None):
         self.evaluator = evaluator
         self.socket_path = os.path.abspath(socket_path)
         self.idle_timeout = float(idle_timeout)
@@ -405,7 +405,7 @@ def ensure_server(
     executable,
     custom_args,
     socket_path,
-    idle_timeout=600,
+    idle_timeout=1500,
     parent_pid=None,
 ):
     """Ensure a server is running at *socket_path*.

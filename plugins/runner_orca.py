@@ -192,8 +192,8 @@ def _add_server_args(parser):
         help="Disable auto server mode; load model directly each time.",
     )
     parser.add_argument(
-        "--server-idle-timeout", type=int, default=600,
-        help="Server idle timeout in seconds (default: 600).",
+        "--server-idle-timeout", type=int, default=1500,
+        help="Server idle timeout in seconds (default: 1500).",
     )
     parser.add_argument(
         "--server-parent-pid", type=int, default=None, help=argparse.SUPPRESS

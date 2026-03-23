@@ -109,7 +109,7 @@ The model server starts automatically on first use and stops after idle timeout.
 - `--no-server` — Disable auto server; load model directly each time.
 - `--server-socket <path>` — Manual socket path.
 - `--stop-server` — Send shutdown to a running server.
-- `--server-idle-timeout <int>` — Idle timeout in seconds (default: 600).
+- `--server-idle-timeout <int>` — Idle timeout in seconds (default: 1500).
 
 Auto-started servers are scoped per parent ORCA process and stop automatically when that parent exits.
 
