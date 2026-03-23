@@ -1,6 +1,6 @@
 # orca-mlips
 
-[![DOI](https://zenodo.org/badge/1160316090.svg)](https://doi.org/10.5281/zenodo.18691881)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19197771.svg)](https://doi.org/10.5281/zenodo.19197771)
 
 MLIP (Machine Learning Interatomic Potential) plugins for ORCA `ExtTool` (`ProgExt`) interface.
 
@@ -244,10 +244,10 @@ If you use this package, please cite:
   title        = {orca-mlips},
   year         = {2026},
   month        = {2},
-  version      = {1.1.0},
+  version      = {1.2.1},
   url          = {https://github.com/t-0hmura/orca-mlips},
   license      = {MIT},
-  doi          = {10.5281/zenodo.19093652}
+  doi          = {10.5281/zenodo.19197771}
 }
 ```
 
