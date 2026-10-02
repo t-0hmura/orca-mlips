@@ -1,6 +1,6 @@
 # orca-mlips
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19197771.svg)](https://doi.org/10.5281/zenodo.19197771)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18691881.svg)](https://doi.org/10.5281/zenodo.18691881)
 
 MLIP (Machine Learning Interatomic Potential) plugins for ORCA `ExtTool` (`ProgExt`) interface.
 
@@ -21,9 +21,9 @@ Requires **Python 3.9** or later.
 
 ## Quick Start (Default = UMA)
 
-1. Install PyTorch suitable for your CUDA environment.
+1. Install PyTorch suitable for your CUDA environment (CUDA 13.0 recommended).
 ```bash
-pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cu129
+pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu130
 ```
 
 2. Install the package with the UMA profile. If you need ORB/MACE/AIMNet2, use `orca-mlips[orb]`/`orca-mlips[mace]`/`orca-mlips[aimnet2]`.
@@ -33,7 +33,7 @@ pip install "orca-mlips[uma]"
 
 3. Log in to Hugging Face for UMA model access. (Not required for ORB/MACE/AIMNet2)
 ```bash
-huggingface-cli login
+hf auth login
 ```
 > UMA model is on Hugging Face Hub. You need to log in once (See https://github.com/facebookresearch/fairchem):
 
@@ -185,7 +185,22 @@ end
 *
 ```
 
+## Local Model Weights
+
+Use `-w` / `--weights-file` to load a downloaded checkpoint:
+
+```text
+%method
+  ProgExt "orca-mlips-orb"
+  Ext_Params "--model orb-v3-conservative-omol --weights-file orb.ckpt"
+end
+```
+
+The option works with UMA, ORB, MACE, and AIMNet2. For ORB, `--model` selects the architecture and `--weights-file` supplies its weights. Local weights bypass automatic checkpoint downloads.
+
 ## Installing Model Families
+
+Use Python 3.12 or newer for current ORB releases.
 
 ```bash
 pip install "orca-mlips[uma]"         # UMA (default)
@@ -197,7 +212,7 @@ pip install "orca-mlips[orb,mace,aimnet2]"  # ORB + MACE + AIMNet2
 pip install orca-mlips                # core only
 ```
 
-> **Note:** UMA and MACE have a dependency conflict (`e3nn`). Use separate environments.
+> **Note:** UMA conflicts with MACE (`e3nn`) and ORB (`nvalchemi-toolkit-ops`) in the current upstream releases. Install UMA in its own environment.
 
 Local install:
 ```bash
@@ -207,7 +222,7 @@ pip install ".[uma]"
 ```
 
 Model download notes:
-- **UMA**: Hosted on Hugging Face Hub. Run `huggingface-cli login` once.
+- **UMA**: Hosted on Hugging Face Hub. Run `hf auth login` once.
 - **ORB / MACE / AIMNet2**: Downloaded automatically on first use.
 
 ## Upstream Model Sources
@@ -222,6 +237,8 @@ Model download notes:
 See [`OPTIONS.md`](OPTIONS.md) for backend-specific tuning parameters.
 For solvent correction options, see [`SOLVENT_EFFECTS.md`](SOLVENT_EFFECTS.md).
 
+> **Note:** For ORB and MACE, FP32 runs faster than FP64 and is useful for generating starting geometries for subsequent DFT refinement, but extra imaginary frequencies may remain after the MLIP optimization reports convergence. If you need an MLIP local minimum with no imaginary frequencies or a TS with only its single imaginary mode, we recommend FP64: `--precision float64` for ORB or `--dtype float64` for MACE.
+
 Command aliases:
 - Short: `uma`, `orb`, `mace`, `aimnet2`
 - Prefixed: `orca-mlips-uma`, `orca-mlips-orb`, `orca-mlips-mace`, `orca-mlips-aimnet2`
@@ -231,7 +248,7 @@ Command aliases:
 - **`ProgExt "uma"` runs the wrong plugin** — Use `ProgExt "orca-mlips-uma"` to avoid alias conflicts.
 - **`ProgExt "aimnet2"` runs the wrong plugin** — Use `ProgExt "orca-mlips-aimnet2"` to avoid alias conflicts.
 - **`uma` command not found** — Activate the conda environment where the package is installed.
-- **UMA model download fails (401/403)** — Run `huggingface-cli login`. Some models require access approval on Hugging Face.
+- **UMA model download fails (401/403)** — Run `hf auth login`. Some models require access approval on Hugging Face.
 - **Works interactively but fails in PBS jobs** — Use absolute path from `which uma` in the ORCA input.
 
 ## Citation
@@ -243,11 +260,11 @@ If you use this package, please cite:
   author       = {Ohmura, Takuto},
   title        = {orca-mlips},
   year         = {2026},
-  month        = {2},
-  version      = {1.2.1},
+  month        = {10},
+  version      = {1.3.0},
   url          = {https://github.com/t-0hmura/orca-mlips},
   license      = {MIT},
-  doi          = {10.5281/zenodo.19197771}
+  doi          = {10.5281/zenodo.18691881}
 }
 ```
 

@@ -367,6 +367,9 @@ def auto_server_socket(args, parent_pid=None):
     server even though each call is a separate child process.
     """
     key_parts = [str(getattr(args, "model", "default"))]
+    weights_file = getattr(args, "weights_file", None)
+    if weights_file is not None:
+        key_parts.append(os.path.abspath(os.path.expanduser(weights_file)))
     if hasattr(args, "device"):
         key_parts.append(str(args.device))
     if hasattr(args, "task"):

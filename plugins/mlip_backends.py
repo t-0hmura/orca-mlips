@@ -35,6 +35,7 @@ HESS_HA_BOHR2_PER_EV_ANG2 = HARTREE_PER_EV / (BOHR_PER_ANG * BOHR_PER_ANG)
 FAIRCHEM_MODELS_FALLBACK = [
     "uma-s-1p1",
     "uma-s-1p2",
+    "uma-s-1p2p1",
     "uma-m-1p1",
     "esen-md-direct-all-omol",
     "esen-sm-conserving-all-omol",
@@ -48,6 +49,7 @@ FAIRCHEM_MODELS_FALLBACK = [
 FAIRCHEM_TASKS_FALLBACK = ["omol", "omat", "odac", "oc20", "oc25", "omc"]
 
 ORB_MODELS_FALLBACK = [
+    "orbmol-v2",
     "orb-v3-conservative-omol",
     "orb-v3-conservative-20-omat",
     "orb-v3-conservative-inf-omat",
@@ -72,7 +74,7 @@ def _is_deprecated_orb_model(model_name):
 
 def _is_conservative_orb_model(model_name):
     norm_dash = str(model_name).replace("_", "-").lower()
-    return ("conservative" in norm_dash) and ("direct" not in norm_dash)
+    return norm_dash == "orbmol-v2" or (("conservative" in norm_dash) and ("direct" not in norm_dash))
 
 
 MACE_MP_ALIASES_FALLBACK = [
@@ -118,6 +120,58 @@ class BackendError(RuntimeError):
     """Raised for backend-specific runtime failures."""
 
 
+def _local_weights_path(weights_file):
+    if weights_file is None:
+        return None
+    filename = os.path.abspath(os.path.expanduser(os.fspath(weights_file)))
+    if not os.path.isfile(filename):
+        raise BackendError("Weights file does not exist: {}".format(filename))
+    return filename
+
+
+def _load_uma_predictor(pretrained, model, device, workers, workers_per_node,
+                        weights_file=None, inference_settings="default"):
+    if weights_file is not None:
+        from fairchem.core.units.mlip_unit import load_predict_unit
+
+        if workers > 1 and workers_per_node is not None:
+            from fairchem.core.units.mlip_unit.predict import ParallelMLIPPredictUnit
+            from fairchem.core.units.mlip_unit.api.inference import guess_inference_settings
+
+            return ParallelMLIPPredictUnit(
+                inference_model_path=weights_file,
+                device=device,
+                inference_settings=guess_inference_settings(inference_settings),
+                num_workers=workers,
+                num_workers_per_node=workers_per_node,
+            )
+        return load_predict_unit(
+            weights_file, device=device, workers=workers,
+            inference_settings=inference_settings,
+        )
+    if workers > 1 and workers_per_node is not None:
+        from fairchem.core.units.mlip_unit.predict import ParallelMLIPPredictUnit
+        from fairchem.core.units.mlip_unit.api.inference import guess_inference_settings
+
+        references = pretrained.get_reference_energies(model, "atom_refs")
+        try:
+            element_refs = pretrained.get_reference_energies(model, "form_elem_refs")["refs"]
+        except (TypeError, KeyError):
+            element_refs = None
+        return ParallelMLIPPredictUnit(
+            inference_model_path=str(pretrained.pretrained_checkpoint_path_from_name(model)),
+            device=device,
+            inference_settings=guess_inference_settings(inference_settings),
+            atom_refs=references,
+            form_elem_refs=element_refs,
+            num_workers=workers,
+            num_workers_per_node=workers_per_node,
+        )
+    return pretrained.get_predict_unit(
+        model, device=device, workers=workers, inference_settings=inference_settings,
+    )
+
+
 def _is_hf_access_issue(exc):
     text = str(exc).lower()
     tags = (
@@ -139,7 +193,7 @@ def _with_uma_access_hint(prefix, exc):
     return (
         msg
         + "\nUMA model download failed due to Hugging Face access/auth."
-        + "\nRun once: huggingface-cli login"
+        + "\nRun once: hf auth login"
         + "\nIf the selected model repo is gated, request access on its Hugging Face page."
     )
 
@@ -440,6 +494,7 @@ class UMAEvaluator(_BackendBase):
         radius=None,
         r_edges=False,
         otf_graph=True,
+        weights_file=None,
     ):
         try:
             import torch
@@ -457,6 +512,9 @@ class UMAEvaluator(_BackendBase):
 
         self.device = str(device)
         self.model = str(model)
+        self.weights_file = _local_weights_path(weights_file)
+        self._pretrained = pretrained_mlip
+        self._hessian_ready = False
         self.task = str(task)
         self.workers = max(1, int(workers))
         self.workers_per_node = (
@@ -471,34 +529,15 @@ class UMAEvaluator(_BackendBase):
         self.r_edges = bool(r_edges)
         self.otf_graph = bool(otf_graph)
 
-        predictor_attempts = [
-            {"device": self.device, "workers": self.workers, "workers_per_node": self.workers_per_node},
-            {"device": self.device, "workers": self.workers},
-            {"device": self.device},
-        ]
-        # Remove None values and deduplicate
-        uniq_attempts = _unique_ordered(
-            tuple(sorted((k, v) for k, v in kw.items() if v is not None))
-            for kw in predictor_attempts
-        )
-        uniq_attempts = [dict(kv) for kv in uniq_attempts]
-
-        last_exc = None
-        self._predictor = None
-        for kwargs in uniq_attempts:
-            try:
-                self._predictor = pretrained_mlip.get_predict_unit(self.model, **kwargs)
-                break
-            except Exception as exc:
-                last_exc = exc
-                continue
-        if self._predictor is None:
-            raise BackendError(
-                _with_uma_access_hint(
-                    "Failed to initialize UMA predictor with the requested worker settings",
-                    last_exc,
-                )
+        try:
+            self._predictor = _load_uma_predictor(
+                pretrained_mlip, self.model, self.device, self.workers,
+                self.workers_per_node, self.weights_file,
             )
+        except Exception as exc:
+            raise BackendError(_with_uma_access_hint(
+                "Failed to initialize UMA predictor", exc,
+            )) from exc
 
         self._ase_calc = FAIRChemCalculator(self._predictor, task_name=self.task)
         self._AtomicData = AtomicData
@@ -540,6 +579,7 @@ class UMAEvaluator(_BackendBase):
 
         data = self._AtomicData.from_ase(
             atoms,
+            r_data_keys=["spin", "charge"],
             max_neigh=max_neigh,
             radius=radius,
             r_edges=self.r_edges,
@@ -552,6 +592,27 @@ class UMAEvaluator(_BackendBase):
         return batch
 
     def analytical_hessian(self, symbols, coords_ang, charge, multiplicity):
+        if self.workers > 1:
+            raise BackendError("Analytical UMA Hessians require one predictor worker.")
+        if not self._hessian_ready:
+            from fairchem.core import FAIRChemCalculator
+            from fairchem.core.units.mlip_unit.api.inference import InferenceSettings
+
+            settings = InferenceSettings(
+                activation_checkpointing=False, merge_mole=False, compile=False,
+            )
+            if hasattr(settings, "execution_mode"):
+                settings.execution_mode = "general"
+            self._predictor = _load_uma_predictor(
+                self._pretrained, self.model, self.device, self.workers,
+                self.workers_per_node, self.weights_file, settings,
+            )
+            self._ase_calc = FAIRChemCalculator(self._predictor, task_name=self.task)
+            self._has_torch_model = hasattr(self._predictor, "model")
+            if hasattr(self._predictor, "move_to_device"):
+                self._predictor.move_to_device()
+            self._hessian_ready = True
+
         if not self._has_torch_model:
             raise BackendError("Current UMA predictor does not expose a torch model for analytical Hessian.")
 
@@ -595,7 +656,7 @@ class UMAEvaluator(_BackendBase):
 class OrbMolEvaluator(_BackendBase):
     """OrbMol backend via orb-models."""
 
-    def __init__(self, model, device, precision, compile_model, loader_kwargs=None, calc_kwargs=None):
+    def __init__(self, model, device, precision, compile_model, loader_kwargs=None, calc_kwargs=None, weights_file=None):
         try:
             import torch
             from orb_models.forcefield import pretrained as orb_pretrained
@@ -615,6 +676,12 @@ class OrbMolEvaluator(_BackendBase):
         self.precision = str(precision)
         self.compile_model = bool(compile_model)
         self.loader_kwargs = dict(loader_kwargs or {})
+        local_weights = _local_weights_path(weights_file)
+        if local_weights is not None:
+            previous = self.loader_kwargs.get("weights_path")
+            if previous is not None and _local_weights_path(previous) != local_weights:
+                raise BackendError("--weights-file conflicts with --loader-opt weights_path.")
+            self.loader_kwargs["weights_path"] = local_weights
         self.calc_kwargs = dict(calc_kwargs or {})
 
         if not _is_conservative_orb_model(self.model_name):

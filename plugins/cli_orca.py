@@ -134,6 +134,7 @@ def _uma_make_evaluator(args):
         radius=args.radius,
         r_edges=bool(args.r_edges),
         otf_graph=bool(args.otf_graph),
+        weights_file=args.weights_file,
     )
 
 
@@ -143,6 +144,7 @@ def _orb_make_evaluator(args):
         device=args.device,
         precision=args.precision,
         compile_model=bool(args.compile_model),
+        weights_file=args.weights_file,
         loader_kwargs=_parse_kv_list(args.loader_opt, "--loader-opt"),
         calc_kwargs=_parse_kv_list(args.calc_opt, "--calc-opt"),
     )
@@ -150,7 +152,7 @@ def _orb_make_evaluator(args):
 
 def _mace_make_evaluator(args):
     return MACEEvaluator(
-        model=args.model,
+        model=args.weights_file or args.model,
         device=args.device,
         default_dtype=args.dtype,
         calc_kwargs=_parse_kv_list(args.calc_opt, "--calc-opt"),
@@ -159,7 +161,7 @@ def _mace_make_evaluator(args):
 
 def _aimnet2_make_evaluator(args):
     return AIMNet2Evaluator(
-        model=args.model,
+        model=args.weights_file or args.model,
         device=args.device,
         calc_kwargs=_parse_kv_list(args.calc_opt, "--calc-opt"),
     )

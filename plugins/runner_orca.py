@@ -242,6 +242,10 @@ def run_orca_plugin(
     )
     parser.add_argument("extinp", nargs="?", help="ORCA ExtTool input file (<basename_EXT.extinp.tmp>)")
     parser.add_argument("--model", default=default_model, help="Model name/alias/path")
+    parser.add_argument(
+        "-w", "--weights-file", default=None,
+        help="Path to a downloaded model weights file (overrides automatic download).",
+    )
     parser.add_argument("--device", default="auto", help="cpu|cuda|auto")
     parser.add_argument(
         "--solvent",
@@ -315,6 +319,10 @@ def run_orca_plugin(
         )
 
     args = parser.parse_args(argv)
+    if args.weights_file is not None:
+        args.weights_file = os.path.abspath(os.path.expanduser(args.weights_file))
+        if not os.path.isfile(args.weights_file):
+            parser.error("Weights file does not exist: {}".format(args.weights_file))
 
     if args.list_models:
         models = list(available_models())

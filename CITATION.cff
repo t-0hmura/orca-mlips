@@ -9,6 +9,6 @@ authors:
     orcid: "https://orcid.org/0009-0008-1215-0168"
 license: MIT
 repository-code: "https://github.com/t-0hmura/orca-mlips"
-version: "1.2.1"
-date-released: "2026-03-24"
-doi: 10.5281/zenodo.19197771
+version: "1.3.0"
+date-released: "2026-10-03"
+doi: 10.5281/zenodo.18691881

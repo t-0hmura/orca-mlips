@@ -2,11 +2,12 @@
 
 For most users, defaults are sufficient.
 
-> **Note:** UMA and MACE currently have a dependency conflict (`e3nn`). Use separate environments.
+> **Note:** UMA conflicts with MACE (`e3nn`) and ORB (`nvalchemi-toolkit-ops`) in the current upstream releases. Install UMA in its own environment.
 
 ## Common Options (all backends)
 
 - `--model <name_or_alias_or_path>`
+- `-w`, `--weights-file <path>` — Load a downloaded weights file. For ORB, `--model` still selects the architecture.
 - `--device auto|cpu|cuda`
 - `--solvent <name|none>` — xTB implicit-solvent correction (`none` disables correction).
 - `--solvent-model <alpb|cpcmx>` — implicit solvent model (default: `alpb`).
@@ -32,7 +33,7 @@ Available models (default: **`uma-s-1p1`**):
 | `uma-s-1p2` | Small model v1.2, ~50% faster & ~40% more accurate on OMol (6.6M/290M active/total params) |
 | `uma-m-1p1` | Best across all metrics, slower and more memory-intensive (50M/1.4B active/total params) |
 
-Run `uma --list-models` to see the full list including `esen-*` variants. Models are hosted on Hugging Face Hub (`huggingface-cli login` required).
+Run `uma --list-models` to see the full list including `esen-*` variants. Models are hosted on Hugging Face Hub (`hf auth login` required).
 
 - `--task <omol|omat|odac|oc20|oc25|omc>`
 - `--list-tasks`
